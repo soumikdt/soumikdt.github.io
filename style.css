@@ -198,3 +198,19 @@ footer.site {
   .entry .when { padding-top: 0; }
   main { padding-top: 32px; }
 }
+
+figure { margin: 20px 0; }
+figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+figcaption {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 8px;
+}
