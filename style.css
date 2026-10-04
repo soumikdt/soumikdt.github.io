@@ -214,3 +214,30 @@ figcaption {
   color: var(--muted);
   margin-top: 8px;
 }
+
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 24px;
+  margin: 36px 0 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.tabs a {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.9rem;
+  color: var(--muted);
+  text-decoration: none;
+  padding: 8px 0;
+  margin-bottom: -1px;
+  border-bottom: 2px solid transparent;
+}
+
+.tabs a:hover { color: var(--text); }
+.tabs a[aria-selected="true"] {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+}
+
+.tab-panel { padding-top: 28px; }
+.tab-panel > h2:first-child { margin-top: 4px; }
