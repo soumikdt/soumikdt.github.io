@@ -263,3 +263,5 @@ figcaption {
 }
 
 main ul:not(.plain):not(.pubs) li { margin-bottom: 8px; }
+
+figure.narrow img { max-width: 460px; margin: 0 auto; }

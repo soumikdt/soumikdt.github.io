@@ -37,13 +37,8 @@
   <p>A central challenge in topological data analysis (TDA) is the size of the simplicial
   complexes involved: persistent homology becomes computationally intractable as the
   complexes grow. This work looks at how far a complex can be shrunk while provably
-  keeping the structure it is meant to capture.</p>
-  <figure>
-    <img src="tda_pointcloud_rips.png" alt="Left: a noisy point cloud sampled around a circle. Right: the Vietoris–Rips complex built on those points, a ring of edges, triangles and higher simplices with one large hole in the middle." width="832" height="396">
-    <figcaption>A point cloud and the Vietoris–Rips complex built on it. The complex
-    recovers the shape of the data — here, one loop — but it can contain far more
-    simplices than there are points.</figcaption>
-  </figure>
+  keeping the structure it is meant to capture. For an introduction to TDA and to
+  collapses, with pictures, see <a href="tda.html">TDA explained</a>.</p>
 
   <h2>Edge collapse of random simplicial complexes</h2>
   <p>Edge collapse (introduced by Boissonnat and Pritam, SoCG 2020) is a method to reduce
@@ -53,13 +48,6 @@
   simplices containing it, without changing the homotopy type. Removing a maximal set of
   dominated edges is one <em>phase</em>, and running phases recursively reduces the
   complex to its <em>core</em>.</p>
-  <figure>
-    <img src="edgecol_phases.png" alt="Four drawings of the same simplicial complex on nine vertices. First: the full complex with many triangles, its dominated edges highlighted and numbered. Second: after removing them, a much smaller complex with new dominated edges highlighted. Third: one small triangle left. Fourth: the final core, a graph with a single cycle and no triangles." width="1280" height="960">
-    <figcaption>Edge collapse in phases. Dominated edges (highlighted, numbered in the
-    order they are removed) are collapsed in each phase, top left to bottom right, until
-    none remain. The final core is far smaller and has the same homotopy type as the
-    complex we started with.</figcaption>
-  </figure>
   <p>We consider the edge collapse process on the Erdős–Rényi random clique complex
   <span class="math">X(n, c/√n)</span> on <span class="math">n</span> vertices with edge
   probability <span class="math">p = c/√n</span>, where <span class="math">c &gt; √η₂</span>
@@ -80,6 +68,59 @@
   collapse process, and a new concentration inequality for typically Lipschitz functions
   on random graphs, which is of independent interest. These are the first theoretical
   results proved for edge collapses on random (or non-random) simplicial complexes.</p>
+
+  <h3>Critical complexes</h3>
+  <p>The difficulty is that edge collapse is not a local operation. Deleting a single
+  dominated edge can make as many as <span class="math">O(n²)</span> other edges
+  dominated, so the size of the <span class="math">t</span>-core can in principle swing
+  far from its expected value, and concentration inequalities for
+  uniformly Lipschitz functions, such as McDiarmid's, do not apply. We show that this can only happen when the complex contains
+  one of a specific family of subcomplexes, which we call <em>critical complexes</em>.</p>
+  <figure class="narrow">
+    <img src="edgecol_critical_complex.png" alt="Diagram of a critical complex: an edge u–w with a vertex v above it and vertices u1, …, u(k−1) below it. Every one of these vertices is joined to u, to w and to v, and each forms a shaded triangle with the edge u–w." width="962" height="745">
+    <figcaption>A critical complex of order <span class="math">k</span>: the edge
+    <span class="math">uw</span> lies in <span class="math">k</span> triangles, with apexes
+    <span class="math">v, u<sub>1</sub>, …, u<sub>k−1</sub></span>, and
+    <span class="math">v</span> is joined to all of them. It has
+    <span class="math">k + 2</span> vertices and <span class="math">3k</span> edges.</figcaption>
+  </figure>
+  <p>A critical complex of order <span class="math">k</span> has so many edges on so few
+  vertices that the expected number of copies in <span class="math">X(n, c/√n)</span> is
+  <span class="math">O(n<sup>−(k−4)/2</sup>)</span>: for large
+  <span class="math">k</span> they almost never appear. The effect of an edge collapse is
+  therefore <em>typically</em> bounded, even though it is not bounded in the worst
+  case.</p>
+
+  <h3>A concentration inequality for typically Lipschitz functions</h3>
+  <p>To turn “typically bounded” into a proof we need a concentration inequality that
+  tolerates rare bad configurations. Let <span class="math">G ∼ G(n, p)</span> with
+  <span class="math">p ≤ 1/2</span>, let <span class="math">m = C(n, 2)</span> be the
+  number of potential edges, and fix a “bad” graph <span class="math">H</span>. Let
+  <span class="math">f</span> be a function of the graph such that flipping one potential
+  edge changes <span class="math">f</span> by at most <span class="math">C</span> when
+  neither graph contains a copy of <span class="math">H</span>, and by at most
+  <span class="math">D</span> otherwise. Write <span class="math">B</span> for the expected
+  number of copies of <span class="math">H</span> in <span class="math">G</span>. Then for
+  every <span class="math">T &gt; B</span>,</p>
+  <div class="note">
+    <p><span class="math">Pr{ |f − E[f]| &gt; s } ≤ 2 · exp( − s² / ( 2 (C + DT/p) (mpC + mDT + s/3) ) ) + B/T.</span></p>
+  </div>
+  <p>The proof uses two coupled martingales on the same filtration, which stop at the same
+  moment — when the conditional expected number of copies of <span class="math">H</span>
+  exceeds a threshold. One martingale controls the deviation of <span class="math">f</span>
+  through Freedman's inequality; the other controls the probability of ever stopping,
+  through the Optional Stopping Theorem. Earlier stopped-martingale arguments bound the
+  stopping probability by a union bound over all <span class="math">m</span> steps, which
+  gives <span class="math">mB/T</span> in place of <span class="math">B/T</span> (Warnke,
+  2016); removing that factor <span class="math">m</span> is what makes the inequality
+  usable here.</p>
+  <p>Taking <span class="math">H</span> to be the 1-skeleton of a critical complex of
+  order 20 (22 vertices, 60 edges) gives concentration of the size of the
+  <span class="math">t</span>-core around its expectation
+  <span class="math">Y<sub>0</sub></span>: for any <span class="math">s ≥ 0</span>,</p>
+  <div class="note">
+    <p><span class="math">Pr{ | e(t-core) − Y<sub>0</sub> | ≥ s · n } ≤ 2 · exp( − s² · Θ(√n) ) + O(n<sup>−5.5</sup>).</span></p>
+  </div>
   <h3>Experiments</h3>
   <p>We ran experiments on Erdős–Rényi clique complexes <span class="math">X(n, c/√n)</span>
   and plotted the size of the <span class="math">t</span>-core against the number of
@@ -117,6 +158,35 @@
   relationships in data, and it gives rise to the Gaussian kernel distance, with
   applications in kernel PCA, spectral clustering and more. Computing these distances
   between many pairs of points can be computationally prohibitive.</p>
+
+  <h3>What are random Fourier features?</h3>
+  <p>The starting point is a classical identity: the Gaussian is its own Fourier
+  transform, so it can be written as an average of cosines with Gaussian random
+  frequencies,</p>
+  <div class="note">
+    <p><span class="math">e<sup>−x²/2</sup> = E[ cos(ωx) ]</span>, &nbsp;where
+    <span class="math">ω ∼ N(0, 1)</span>.</p>
+  </div>
+  <p>In <span class="math">ℝ<sup>N</sup></span> the same identity gives the Gaussian
+  kernel itself:
+  <span class="math">k(x, y) = e<sup>−‖x−y‖²/2</sup> = E[ cos⟨ω, x − y⟩ ]</span> with
+  <span class="math">ω ∼ N(0, I<sub>N</sub>)</span>. Rahimi and Recht's idea is to replace
+  the expectation by an average over <span class="math">t</span> random draws
+  <span class="math">ω₁, …, ω<sub>t</sub></span>. Since
+  <span class="math">cos(a − b) = cos a · cos b + sin a · sin b</span>, that average is an
+  ordinary inner product of the feature vectors</p>
+  <div class="note">
+    <p><span class="math">z(x) = (1/√t) · ( cos⟨ω₁, x⟩, sin⟨ω₁, x⟩, …, cos⟨ω<sub>t</sub>, x⟩, sin⟨ω<sub>t</sub>, x⟩ )</span>,
+    &nbsp;so that&nbsp; <span class="math">⟨z(x), z(y)⟩ ≈ k(x, y)</span>.</p>
+  </div>
+  <p>These are the <em>random Fourier features</em>. They turn an expensive nonlinear
+  kernel into a plain Euclidean computation in <span class="math">2t</span> dimensions:
+  the kernel distance <span class="math">√(2 − 2k(x, y))</span> becomes the ordinary
+  distance <span class="math">‖z(x) − z(y)‖</span>, up to a random error. The question is
+  how large <span class="math">t</span> has to be for that error to be small for
+  <em>all</em> pairs of points at once.</p>
+
+  <h3>Our result</h3>
   <p>Using the Random Fourier Features (RFF) method of Rahimi and Recht, Chen and Phillips
   proved that for points in a ball of radius <span class="math">R</span>, a number of
   random features depending on <span class="math">R</span> suffices to preserve all
