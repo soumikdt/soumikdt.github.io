@@ -241,3 +241,25 @@ figcaption {
 
 .tab-panel { padding-top: 28px; }
 .tab-panel > h2:first-child { margin-top: 4px; }
+
+.slides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 20px 0 10px;
+}
+
+.slides img {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+
+@media (max-width: 560px) {
+  .slides { grid-template-columns: 1fr; }
+}
+
+main ul:not(.plain):not(.pubs) li { margin-bottom: 8px; }

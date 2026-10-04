@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TDA explained · Soumik Dutta</title>
+  <meta name="description" content="A short introduction to topological data analysis and edge collapse, with slides and a poster by Soumik Dutta.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">Soumik Dutta</a>
+    <nav>
+      <a href="index.html">About</a>
+      <a href="research.html">PhD research</a>
+      <a href="tda.html" aria-current="page">TDA explained</a>
+      <a href="climate.html">Climate science</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <h1>Topological data analysis, explained</h1>
+  <p class="lede">A short introduction to what TDA is and what a collapse does, followed
+  by my talk slides and a poster.</p>
+
+  <h2>What is topological data analysis?</h2>
+  <p>Topological data analysis (TDA) is a way of analysing large, high-dimensional
+  datasets by looking at their <em>shape</em>. Data that is high-dimensional, incomplete
+  and noisy is hard to summarise; topology offers descriptions — how many connected
+  pieces, how many loops, how many voids — that are resistant to noise and do not depend
+  on the exact choice of coordinates or metric.</p>
+  <p>The first step is to turn a point cloud into a topological object. A common choice
+  is the <em>Vietoris–Rips complex</em>: connect any two points that are closer than a
+  chosen scale, and fill in a triangle, tetrahedron and so on whenever all of its edges
+  are present.</p>
+  <figure>
+    <img src="tda_pointcloud_rips.png" alt="Left: a noisy point cloud sampled around a circle. Right: the Vietoris–Rips complex built on those points, a ring of edges, triangles and higher simplices with one large hole in the middle." width="832" height="396">
+    <figcaption>A point cloud and the Vietoris–Rips complex built on it. The complex has
+    one piece and one loop, matching the circle the points were sampled from.</figcaption>
+  </figure>
+
+  <h3>Simplicial complexes</h3>
+  <p>The object built this way is a <em>simplicial complex</em>: a collection of vertices,
+  edges, triangles and their higher-dimensional analogues, glued together along shared
+  faces. It is a discrete version of a topological space — graphs are the special case
+  with nothing above edges — and it is something a computer can store and compute
+  with.</p>
+
+  <h3>Persistent homology</h3>
+  <p>No single scale is the right one, so TDA varies the scale and tracks which features
+  appear and disappear. This is <em>persistent homology</em>. Its output is a persistence
+  diagram, or barcode: features that survive over a long range of scales reflect real
+  structure in the data, and short-lived ones are noise. These topological fingerprints
+  can then be fed into statistics or machine-learning models.</p>
+
+  <h2>What is a collapse?</h2>
+  <p>The catch is size. A complex can have far more simplices than the data has points,
+  and computing persistent homology on it is expensive in both time and memory. A
+  <em>collapse</em> is a way to remove parts of a complex that do not matter
+  topologically, before the expensive computation starts.</p>
+  <ul>
+    <li><strong>Simple collapse</strong> (J. H. C. Whitehead, 1939) removes a simplex
+    that is a face of exactly one other simplex, together with that simplex.</li>
+    <li><strong>Strong collapse</strong> (Barmak and Minian, 2012) removes a whole vertex
+    when it is dominated by another vertex.</li>
+    <li><strong>Edge collapse</strong> (Boissonnat and Pritam, 2020) removes an edge
+    when it is dominated by a vertex — that is, when every maximal simplex containing
+    the edge also contains that vertex.</li>
+  </ul>
+  <p>Each of these keeps the homotopy type of the complex, so it has the same pieces,
+  loops and voids afterwards, and the same homology. Repeating edge collapses until no
+  dominated edge is left gives the <em>core</em> of the complex.</p>
+  <figure>
+    <img src="edgecol_phases.png" alt="Four drawings of the same simplicial complex on nine vertices. First: the full complex with many triangles, its dominated edges highlighted and numbered. Second: after removing them, a much smaller complex with new dominated edges highlighted. Third: one small triangle left. Fourth: the final core, a graph with a single cycle and no triangles." width="1280" height="960">
+    <figcaption>Edge collapse in phases, top left to bottom right. The highlighted edges
+    are dominated and are removed in each phase. The final core has the same shape — one
+    piece, one loop — with far fewer edges and no triangles.</figcaption>
+  </figure>
+  <p>How much does this save? That is the question of my
+  <a href="research.html#tda">PhD research</a>: for random complexes we prove how large
+  the core is after any number of collapsing phases.</p>
+
+  <h2>Slides</h2>
+  <p><strong>On Edge Collapse of Random Simplicial Complexes</strong> — my talk at the
+  40th International Symposium on Computational Geometry (SoCG 2024), joint work with
+  Jean-Daniel Boissonnat, Kunal Dutta and Siddharth Pritam. The first part introduces
+  simplicial complexes, collapses and edge collapse; the rest covers the results and the
+  ideas of the proof.</p>
+  <div class="slides">
+    <a href="slides_edge_collapse_socg2024.pdf#page=1"><img src="slides/socg_01.png" alt="Title slide: On Edge Collapse of Random Simplicial Complexes, SoCG 2024, Athens" width="800" height="600" loading="lazy"></a>
+    <a href="slides_edge_collapse_socg2024.pdf#page=3"><img src="slides/socg_03.png" alt="Introduction: what topological data analysis is, with a point cloud and its Vietoris–Rips complex" width="800" height="600" loading="lazy"></a>
+    <a href="slides_edge_collapse_socg2024.pdf#page=4"><img src="slides/socg_04.png" alt="Simplicial complex: vertices, edges, triangles and tetrahedra glued into a complex" width="800" height="600" loading="lazy"></a>
+    <a href="slides_edge_collapse_socg2024.pdf#page=8"><img src="slides/socg_08.png" alt="Collapses: simple collapse, strong collapse and edge collapse" width="800" height="600" loading="lazy"></a>
+    <a href="slides_edge_collapse_socg2024.pdf#page=11"><img src="slides/socg_11.png" alt="Edge collapse: definition of a dominated edge, with a complex before and after collapsing one edge" width="800" height="600" loading="lazy"></a>
+    <a href="slides_edge_collapse_socg2024.pdf#page=22"><img src="slides/socg_22.png" alt="The t-core algorithm: repeatedly remove dominated edges" width="800" height="600" loading="lazy"></a>
+    <a href="slides_edge_collapse_socg2024.pdf#page=37"><img src="slides/socg_37.png" alt="Results: theorem bounding the number of edges in the core of a random clique complex" width="800" height="600" loading="lazy"></a>
+    <a href="slides_edge_collapse_socg2024.pdf#page=38"><img src="slides/socg_38.png" alt="Simulation: size of the 5-core and 8-core against the number of vertices, with theoretical bounds" width="800" height="600" loading="lazy"></a>
+  </div>
+  <p class="status">A selection of slides; click any of them, or <a href="slides_edge_collapse_socg2024.pdf">open the full deck (PDF, 67 pages)</a>.</p>
+
+  <h2>Poster</h2>
+  <p><strong>Fast Topology &amp; Smart Compression for AI</strong> — a poster on how
+  faster collapse algorithms and dimensionality reduction make topological data analysis
+  scale, and where it is used.</p>
+  <figure>
+    <a href="poster_fast_topology_ai.pdf"><img src="poster_fast_topology_ai.png" alt="Poster titled Fast Topology and Smart Compression for AI. A five-step pipeline runs from gene data to a geometric complex, edge collapse, a topological fingerprint, an AI model and phenotype identification. Below are panels on edge collapse savings, topology-preserving dimensionality reduction, application areas and references." width="2016" height="1134"></a>
+    <figcaption>Poster prepared for the Forum for Mazovia's Development, 2026.
+    <a href="poster_fast_topology_ai.pdf">Open the poster (PDF)</a></figcaption>
+  </figure>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">Soumik Dutta · University of Warsaw</div>
+</footer>
+
+</body>
+</html>
