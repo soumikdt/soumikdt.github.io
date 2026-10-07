@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Low-dimensional embeddings for Gaussian kernels on manifolds · Soumik Dutta</title>
+  <meta name="description" content="Random Fourier features on manifolds: what they are, a uniform relative-error embedding theorem, and experiments.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">Soumik Dutta</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="publications.html">Publications</a>
+      <a href="blog.html" aria-current="page">Blog</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="crumb"><a href="blog.html">← Blog</a></p>
+  <h1>Low-dimensional embeddings for Gaussian kernels on manifolds</h1>
+  <p class="lede">Random Fourier features, and how many of them you need when the data
+  lies on a manifold.</p>
+
+  <div class="post">
+  <p>The Gaussian kernel is a widely used similarity measure that captures nonlinear
+  relationships in data, and it gives rise to the Gaussian kernel distance, with
+  applications in kernel PCA, spectral clustering and more. Computing these distances
+  between many pairs of points can be computationally prohibitive.</p>
+
+  <h3>What are random Fourier features?</h3>
+  <p>The starting point is a classical identity: the Gaussian is its own Fourier
+  transform, so it can be written as an average of cosines with Gaussian random
+  frequencies,</p>
+  <div class="note">
+    <p><span class="math">e<sup>−x²/2</sup> = E[ cos(ωx) ]</span>, &nbsp;where
+    <span class="math">ω ∼ N(0, 1)</span>.</p>
+  </div>
+  <p>In <span class="math">ℝ<sup>N</sup></span> the same identity gives the Gaussian
+  kernel itself:
+  <span class="math">k(x, y) = e<sup>−‖x−y‖²/2</sup> = E[ cos⟨ω, x − y⟩ ]</span> with
+  <span class="math">ω ∼ N(0, I<sub>N</sub>)</span>. Rahimi and Recht's idea is to replace
+  the expectation by an average over <span class="math">t</span> random draws
+  <span class="math">ω₁, …, ω<sub>t</sub></span>. Since
+  <span class="math">cos(a − b) = cos a · cos b + sin a · sin b</span>, that average is an
+  ordinary inner product of the feature vectors</p>
+  <div class="note">
+    <p><span class="math">z(x) = (1/√t) · ( cos⟨ω₁, x⟩, sin⟨ω₁, x⟩, …, cos⟨ω<sub>t</sub>, x⟩, sin⟨ω<sub>t</sub>, x⟩ )</span>,
+    &nbsp;so that&nbsp; <span class="math">⟨z(x), z(y)⟩ ≈ k(x, y)</span>.</p>
+  </div>
+  <p>These are the <em>random Fourier features</em>. They turn an expensive nonlinear
+  kernel into a plain Euclidean computation in <span class="math">2t</span> dimensions:
+  the kernel distance <span class="math">√(2 − 2k(x, y))</span> becomes the ordinary
+  distance <span class="math">‖z(x) − z(y)‖</span>, up to a random error. The question is
+  how large <span class="math">t</span> has to be for that error to be small for
+  <em>all</em> pairs of points at once.</p>
+
+  <h3>Our result</h3>
+  <p>Using the Random Fourier Features (RFF) method of Rahimi and Recht, Chen and Phillips
+  proved that for points in a ball of radius <span class="math">R</span>, a number of
+  random features depending on <span class="math">R</span> suffices to preserve all
+  pairwise Gaussian kernel distances up to a <span class="math">(1 ± ε)</span> factor.
+  For data on an arbitrary submanifold <span class="math">ℳ ⊂ ℝ<sup>N</sup></span> with
+  positive reach and intrinsic dimension <span class="math">d</span>, we establish the
+  first uniform, relative-error embedding theorem for Gaussian kernel distances: roughly</p>
+  <div class="note">
+    <p><span class="math">O( (d² / ε²) · (log N + log (1/εδ)) )</span> random Fourier features</p>
+  </div>
+  <p>are enough to guarantee, with probability <span class="math">1 − δ</span>, that the
+  kernel distance between every pair of points on the manifold is preserved up to relative
+  error <span class="math">ε</span>. The bound depends only logarithmically on the ambient
+  dimension and on manifold parameters such as volume and reach, and needs no bound on the
+  ambient radius.</p>
+
+  <h3>Proof idea</h3>
+  <p>The Gaussian kernel distance is not Lipschitz near the origin, so the proof uses a
+  relative-Lipschitz property instead and exploits properties of tangent spaces to control
+  relative errors on the manifold. We show that the ratio of the random Fourier feature
+  distance to the exact kernel distance concentrates near one and has a bounded
+  derivative; a Taylor expansion then gives uniform control over small balls in the
+  manifold, and covering the manifold with such balls and taking a union bound yields the
+  global guarantee. A similar result holds for sets with bounded Gaussian width.</p>
+  <figure>
+    <img src="rff_manifold_patches.png" alt="Left: a curved surface with two small patches around points p and q, each with its flat tangent plane. Right: the corresponding difference patches in a common local chart, where the curved manifold difference lies close to the flat tangent difference." width="1600" height="696">
+    <figcaption>Left: a manifold <span class="math">ℳ</span> with two intrinsic balls
+    around <span class="math">p</span> and <span class="math">q</span> and their tangent
+    planes. Right: the difference of the two patches stays close to the difference of the
+    tangent planes, with deviation of order <span class="math">r²</span> divided by the
+    reach — this is what lets the proof work with flat pieces locally.</figcaption>
+  </figure>
+
+  <h3>Persistent homology is preserved</h3>
+  <p>Under the same RFF embedding, the persistent homology of the manifold is preserved:
+  the weighted Čech and Rips filtrations built with the Gaussian Kernel Power Distance
+  (GKPD) are <span class="math">(1 ± ε⋆)</span>-interleaved, where
+  <span class="math">ε⋆</span> incorporates both the distance distortion and the
+  approximation of the kernel weights. This extends the point-cloud interleaving result of
+  Boissonnat and Dutta to the continuous manifold setting.</p>
+
+  <h3>Algorithmic consequences</h3>
+  <ul>
+    <li><strong>Kernel k-means</strong> — Euclidean k-means costs on the embedded points
+    <span class="math">(1 ± 2ε)</span>-approximate the true RKHS clustering cost.</li>
+    <li><strong>Kernel distance matching</strong> — the same cost-transfer argument applies
+    to shape and point-cloud matching under Gaussian kernel-distance costs.</li>
+    <li><strong>Kernel nearest-neighbour search</strong> — Euclidean nearest-neighbour
+    search on the embedded points gives a <span class="math">(1 + O(ε))</span>-approximate
+    nearest neighbour under the kernel distance.</li>
+    <li><strong>Kernel SVM</strong> — the embedding preserves the large-margin geometry up
+    to <span class="math">(1 ± O(ε))</span>, so a kernel SVM can be replaced by a linear SVM
+    trained on <span class="math">O(nt)</span> random features instead of an
+    <span class="math">O(n²)</span> Gram matrix.</li>
+  </ul>
+
+  <h3>Empirical validation</h3>
+  <p>We sample 1,000 points on a “slow helix” — a one-dimensional
+  curve in <span class="math">ℝ<sup>N</sup></span> with <span class="math">N = 100</span>
+  — and on the sphere <span class="math">S<sup>99</sup></span>. For each target dimension
+  <span class="math">t</span> we draw 200 independent RFF projections, record the
+  maximum pairwise distance-ratio error, and plot the 95th, 99th and 100th percentiles
+  of that error across seeds.</p>
+  <figure>
+    <img src="rff_quantiles_vs_t.png" alt="Line chart of RFF distance-ratio error quantiles against target dimension t for the slow helix and the sphere, N = 100; all curves decrease as t grows and the slow-helix curves lie below the sphere curves." width="1400" height="816">
+    <figcaption>RFF distance-ratio error quantiles versus target dimension
+    <span class="math">t</span>, slow helix and sphere, <span class="math">N = 100</span>.</figcaption>
+  </figure>
+  <p>In a second experiment we grow the ambient dimension <span class="math">N</span> of
+  the slow helix and find, for each <span class="math">N</span>, the smallest target
+  dimension at which the 95th percentile of the maximum relative error is at most
+  <span class="math">10<sup>−2</sup></span>. The required dimension does not grow linearly
+  with <span class="math">N</span>, as an ambient-dimensional bound would suggest: for
+  low-dimensional data in a high-dimensional space, the number of features needed is
+  governed by the intrinsic geometry.</p>
+  <figure>
+    <img src="rff_slow_helix_threshold.png" alt="Plot of the empirical target dimension needed on the slow helix against the ambient dimension N, with a shaded band for the binary-search bracket; the curve grows much more slowly than linearly in N." width="1400" height="983">
+    <figcaption>Empirical target dimension needed on the slow helix against the ambient
+    dimension <span class="math">N</span>. The shaded band is the final binary-search
+    bracket.</figcaption>
+  </figure>
+
+  <p class="status">Paper: S. Dutta, K. Dutta,
+  <em>Low-Dimensional Embeddings for Gaussian Kernels on Manifolds</em>, submitted to
+  SODA 2027 · <a href="https://arxiv.org/abs/2609.15179">arXiv:2609.15179</a><br>
+  Code: <a href="https://github.com/soumikdt/rff-manifold-demo">rff-manifold-demo</a></p>
+  </div>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">Soumik Dutta · University of Warsaw</div>
+</footer>
+
+</body>
+</html>

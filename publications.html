@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Publications · Soumik Dutta</title>
+  <meta name="description" content="Publications by Soumik Dutta, with a short summary of each paper.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">Soumik Dutta</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="publications.html" aria-current="page">Publications</a>
+      <a href="blog.html">Blog</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <h1>Publications</h1>
+  <p class="lede">The list first, then a few lines about each paper.</p>
+
+  <h2>List</h2>
+
+  <ol class="pubs">
+    <li>
+      Soumik Dutta, Kunal Dutta.
+      <em><a href="#rff">Low-Dimensional Embeddings for Gaussian Kernels on Manifolds.</a></em>
+      <span class="status">Submitted to SODA 2027 · <a href="https://arxiv.org/abs/2609.15179">arXiv:2609.15179</a> ·
+      <a href="https://github.com/soumikdt/rff-manifold-demo">code</a></span>
+    </li>
+    <li>
+      Soumik Dutta, Coralie Kerluc, Karolina Safarzyńska.
+      <em><a href="#diets">Between-group interactions may delay a social tipping point in sustainable diets.</a></em>
+      <span class="status">2026 · Submitted to Climatic Change</span>
+    </li>
+    <li>
+      Jean-Daniel Boissonnat, Kunal Dutta, Soumik Dutta, Siddharth Pritam.
+      <em><a href="#edge-collapse">On Edge Collapse of Random Simplicial Complexes.</a></em>
+      <span class="status">40th International Symposium on Computational Geometry (SoCG 2024) ·
+      <a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.SoCG.2024.21">paper</a> ·
+      <a href="https://github.com/soumikdt/Edge-Collapse-On-Random-Clique-Complex">code</a></span>
+    </li>
+  </ol>
+
+  <h2>About each paper</h2>
+
+  <section class="paper" id="rff">
+    <h3>Low-Dimensional Embeddings for Gaussian Kernels on Manifolds</h3>
+    <p class="status">Soumik Dutta, Kunal Dutta · Submitted to SODA 2027</p>
+    <p>Random Fourier features turn the Gaussian kernel into an ordinary Euclidean inner
+    product, at the price of a random error. For data on a submanifold of
+    <span class="math">ℝ<sup>N</sup></span> with positive reach and intrinsic dimension
+    <span class="math">d</span>, we prove the first uniform, relative-error embedding
+    theorem for Gaussian kernel distances: roughly
+    <span class="math">O((d²/ε²) · (log N + log(1/εδ)))</span> features preserve the
+    distance between every pair of points up to a factor
+    <span class="math">(1 ± ε)</span>. The bound depends only logarithmically on the
+    ambient dimension and needs no bound on the ambient radius. The same embedding
+    preserves persistent homology, and carries over to kernel k-means, nearest-neighbour
+    search and SVMs.</p>
+    <p class="links"><a href="rff.html">Read the longer explanation</a> ·
+    <a href="https://arxiv.org/abs/2609.15179">arXiv:2609.15179</a> ·
+    <a href="https://github.com/soumikdt/rff-manifold-demo">code</a></p>
+  </section>
+
+  <section class="paper" id="diets">
+    <h3>Between-group interactions may delay a social tipping point in sustainable diets</h3>
+    <p class="status">Soumik Dutta, Coralie Kerluc, Karolina Safarzyńska · 2026 · Submitted to Climatic Change</p>
+    <p>We developed and implemented an agent-based model in Python to simulate social
+    imitation in the food-consumption behaviour of more than 80,000 European households,
+    and the CO₂ emissions that follow from it. The work covered data preprocessing, social
+    network generation and Monte Carlo experiments, and was carried out at the University
+    of Warsaw in 2024 – 2025.</p>
+    <p class="links">The paper is under review and not yet public; details will be added
+    here once it is.</p>
+  </section>
+
+  <section class="paper" id="edge-collapse">
+    <h3>On Edge Collapse of Random Simplicial Complexes</h3>
+    <p class="status">Jean-Daniel Boissonnat, Kunal Dutta, Soumik Dutta, Siddharth Pritam · SoCG 2024</p>
+    <p>Edge collapse shrinks a simplicial complex without changing its homotopy type, which
+    makes persistent homology cheaper to compute. We study how much it saves on the
+    Erdős–Rényi random clique complex <span class="math">X(n, c/√n)</span>, and give
+    upper and lower bounds on the number of edges left after any number of collapsing
+    phases, as well as on the final core. The proof combines local weak convergence with
+    a new concentration inequality for typically Lipschitz functions on random graphs.
+    These are the first theoretical results proved for edge collapses on random (or
+    non-random) simplicial complexes.</p>
+    <p class="links"><a href="edge-collapse.html">Read the longer explanation</a> ·
+    <a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.SoCG.2024.21">paper (LIPIcs, SoCG 2024)</a> ·
+    <a href="https://github.com/soumikdt/Edge-Collapse-On-Random-Clique-Complex">code</a> ·
+    <a href="slides_edge_collapse_socg2024.pdf">slides</a></p>
+  </section>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">Soumik Dutta · University of Warsaw</div>
+</footer>
+
+</body>
+</html>

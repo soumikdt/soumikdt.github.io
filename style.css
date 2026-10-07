@@ -265,3 +265,58 @@ figcaption {
 main ul:not(.plain):not(.pubs) li { margin-bottom: 8px; }
 
 figure.narrow img { max-width: 460px; margin: 0 auto; }
+
+.cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 36px;
+}
+
+.card {
+  display: block;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 16px 18px;
+  color: var(--text);
+  text-decoration: none;
+}
+
+.card:hover { border-color: var(--accent); }
+.card strong { display: block; color: var(--accent); }
+.card strong::after { content: " →"; }
+.card span { display: block; color: var(--muted); font-size: 0.92rem; line-height: 1.5; margin-top: 4px; }
+
+@media (max-width: 560px) {
+  .cards { grid-template-columns: 1fr; }
+}
+
+ol.pubs { padding-left: 1.4em; margin: 0; }
+ol.pubs li { margin-bottom: 14px; }
+
+.paper { margin-bottom: 36px; scroll-margin-top: 16px; }
+.paper h3 { margin-top: 0; }
+.paper .status { margin-bottom: 10px; }
+.paper .links {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.paper:target h3 { color: var(--accent); }
+
+ul.posts { list-style: none; padding: 0; margin: 36px 0 0; }
+ul.posts li { padding: 20px 0; border-top: 1px solid var(--line); }
+ul.posts li:last-child { border-bottom: 1px solid var(--line); }
+ul.posts li > a { font-size: 1.2rem; font-weight: 700; line-height: 1.35; text-decoration: none; }
+ul.posts li > a:hover { text-decoration: underline; }
+ul.posts p { margin: 6px 0 8px; }
+
+.crumb {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 0.85rem;
+  margin-bottom: 18px;
+}
+.crumb a { text-decoration: none; }
+
+.post { margin-top: 32px; }

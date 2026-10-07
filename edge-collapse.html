@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edge collapse of random simplicial complexes · Soumik Dutta</title>
+  <meta name="description" content="How far edge collapse shrinks a random clique complex: results, critical complexes, a concentration inequality and experiments.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="index.html">Soumik Dutta</a>
+    <nav>
+      <a href="index.html">Home</a>
+      <a href="publications.html">Publications</a>
+      <a href="blog.html" aria-current="page">Blog</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  <p class="crumb"><a href="blog.html">← Blog</a></p>
+  <h1>Edge collapse of random simplicial complexes</h1>
+  <p class="lede">The results, the proof ideas and the experiments behind our SoCG 2024
+  paper.</p>
+
+  <div class="post">
+  <p>A central challenge in topological data analysis (TDA) is the size of the simplicial
+  complexes involved: persistent homology becomes computationally intractable as the
+  complexes grow. This work looks at how far a complex can be shrunk while provably
+  keeping the structure it is meant to capture. For an introduction to TDA and to
+  collapses, with pictures, see <a href="tda.html">TDA explained</a>.</p>
+
+  <p>Edge collapse (introduced by Boissonnat and Pritam, SoCG 2020) is a method to reduce
+  the size of a simplicial complex while preserving its homotopy, and hence its homology.
+  An edge is <em>dominated</em> by a vertex if every maximal simplex containing the edge
+  also contains that vertex; a dominated edge can be removed, together with all the
+  simplices containing it, without changing the homotopy type. Removing a maximal set of
+  dominated edges is one <em>phase</em>, and running phases recursively reduces the
+  complex to its <em>core</em>.</p>
+  <p>We consider the edge collapse process on the Erdős–Rényi random clique complex
+  <span class="math">X(n, c/√n)</span> on <span class="math">n</span> vertices with edge
+  probability <span class="math">p = c/√n</span>, where <span class="math">c &gt; √η₂</span>
+  and <span class="math">η₂ = inf{ η : x = e<sup>−η(1−x)²</sup> has a solution in (0, 1) }</span>.
+  We show that after <span class="math">t</span> iterations of maximal edge collapsing
+  phases, the remaining subcomplex, or <em>t-core</em>, has asymptotically almost surely</p>
+  <div class="note">
+    <p>at most <span class="math">(1 + o(1)) · C(n, 2) · p · (1 − (c²/3)(1 − (1 − γ<sub>t</sub>)³))</span> edges, and</p>
+    <p>at least <span class="math">(1 + o(1)) · C(n, 2) · p · (1 − γ<sub>t+1</sub> − c²γ<sub>t</sub>(1 − γ<sub>t</sub>)²)</span> edges,</p>
+  </div>
+  <p>where <span class="math">γ<sub>t+1</sub> = e<sup>−c²(1−γ<sub>t</sub>)²</sup></span> and
+  <span class="math">γ<sub>0</sub> = 0</span>. We also give explicit upper and lower bounds
+  on the final core. If <span class="math">c &lt; √η₂</span>, the final core contains
+  <span class="math">o(n√n)</span> edges; if instead <span class="math">c &gt; √(2 log n)</span>,
+  the edge collapse process is no longer effective in reducing the size of the complex.</p>
+  <p>The proof is based on local weak convergence together with two new components:
+  identifying the critical combinatorial structures that control the outcome of the edge
+  collapse process, and a new concentration inequality for typically Lipschitz functions
+  on random graphs, which is of independent interest. These are the first theoretical
+  results proved for edge collapses on random (or non-random) simplicial complexes.</p>
+
+  <h3>Critical complexes</h3>
+  <p>The difficulty is that edge collapse is not a local operation. Deleting a single
+  dominated edge can make as many as <span class="math">O(n²)</span> other edges
+  dominated, so the size of the <span class="math">t</span>-core can in principle swing
+  far from its expected value, and concentration inequalities for
+  uniformly Lipschitz functions, such as McDiarmid's, do not apply. We show that this can only happen when the complex contains
+  one of a specific family of subcomplexes, which we call <em>critical complexes</em>.</p>
+  <figure class="narrow">
+    <img src="edgecol_critical_complex.png" alt="Diagram of a critical complex: an edge u–w with a vertex v above it and vertices u1, …, u(k−1) below it. Every one of these vertices is joined to u, to w and to v, and each forms a shaded triangle with the edge u–w." width="962" height="745">
+    <figcaption>A critical complex of order <span class="math">k</span>: the edge
+    <span class="math">uw</span> lies in <span class="math">k</span> triangles, with apexes
+    <span class="math">v, u<sub>1</sub>, …, u<sub>k−1</sub></span>, and
+    <span class="math">v</span> is joined to all of them. It has
+    <span class="math">k + 2</span> vertices and <span class="math">3k</span> edges.</figcaption>
+  </figure>
+  <p>A critical complex of order <span class="math">k</span> has so many edges on so few
+  vertices that the expected number of copies in <span class="math">X(n, c/√n)</span> is
+  <span class="math">O(n<sup>−(k−4)/2</sup>)</span>: for large
+  <span class="math">k</span> they almost never appear. The effect of an edge collapse is
+  therefore <em>typically</em> bounded, even though it is not bounded in the worst
+  case.</p>
+
+  <h3>A concentration inequality for typically Lipschitz functions</h3>
+  <p>To turn “typically bounded” into a proof we need a concentration inequality that
+  tolerates rare bad configurations. Let <span class="math">G ∼ G(n, p)</span> with
+  <span class="math">p ≤ 1/2</span>, let <span class="math">m = C(n, 2)</span> be the
+  number of potential edges, and fix a “bad” graph <span class="math">H</span>. Let
+  <span class="math">f</span> be a function of the graph such that flipping one potential
+  edge changes <span class="math">f</span> by at most <span class="math">C</span> when
+  neither graph contains a copy of <span class="math">H</span>, and by at most
+  <span class="math">D</span> otherwise. Write <span class="math">B</span> for the expected
+  number of copies of <span class="math">H</span> in <span class="math">G</span>. Then for
+  every <span class="math">T &gt; B</span>,</p>
+  <div class="note">
+    <p><span class="math">Pr{ |f − E[f]| &gt; s } ≤ 2 · exp( − s² / ( 2 (C + DT/p) (mpC + mDT + s/3) ) ) + B/T.</span></p>
+  </div>
+  <p>The proof uses two coupled martingales on the same filtration, which stop at the same
+  moment — when the conditional expected number of copies of <span class="math">H</span>
+  exceeds a threshold. One martingale controls the deviation of <span class="math">f</span>
+  through Freedman's inequality; the other controls the probability of ever stopping,
+  through the Optional Stopping Theorem. Earlier stopped-martingale arguments bound the
+  stopping probability by a union bound over all <span class="math">m</span> steps, which
+  gives <span class="math">mB/T</span> in place of <span class="math">B/T</span> (Warnke,
+  2016); removing that factor <span class="math">m</span> is what makes the inequality
+  usable here.</p>
+  <p>Taking <span class="math">H</span> to be the 1-skeleton of a critical complex of
+  order 20 (22 vertices, 60 edges) gives concentration of the size of the
+  <span class="math">t</span>-core around its expectation
+  <span class="math">Y<sub>0</sub></span>: for any <span class="math">s ≥ 0</span>,</p>
+  <div class="note">
+    <p><span class="math">Pr{ | e(t-core) − Y<sub>0</sub> | ≥ s · n } ≤ 2 · exp( − s² · Θ(√n) ) + O(n<sup>−5.5</sup>).</span></p>
+  </div>
+  <h3>Experiments</h3>
+  <p>We ran experiments on Erdős–Rényi clique complexes <span class="math">X(n, c/√n)</span>
+  and plotted the size of the <span class="math">t</span>-core against the number of
+  vertices <span class="math">n ∈ [100, 5000]</span> for different values of
+  <span class="math">c</span> and <span class="math">t</span>. In a second set of
+  experiments we varied <span class="math">c ∈ [1.6, 2.5]</span> with the number of
+  vertices fixed at <span class="math">n = 1500</span>. The experiments validate the
+  theoretical results.</p>
+  <figure>
+    <img src="edgecol_5core_c2.png" alt="Plot of the number of edges in the 5-core of X(n, 2/√n) against n, with the initial number of edges and the theoretical upper and lower bounds.">
+    <figcaption>Number of edges in the 5-core of <span class="math">X(n, 2/√n)</span>, along
+    with the initial number of edges. Solid lines: theoretical upper and lower bounds on
+    the expected number of edges.</figcaption>
+  </figure>
+  <figure>
+    <img src="edgecol_core_vs_c.png" alt="Plot of the number of edges in the core of X(1500, c/√1500) against c between 1.6 and 2.5, with the initial number of edges and the theoretical bounds.">
+    <figcaption>Number of edges in the core of <span class="math">X(1500, c/√1500)</span> for
+    <span class="math">c ∈ [1.6, 2.5]</span>, along with the initial number of edges. The
+    theoretical bounds tend to coincide as <span class="math">c</span> increases.</figcaption>
+  </figure>
+
+  <p class="status">Paper: J-D. Boissonnat, K. Dutta, S. Dutta, S. Pritam,
+  <em>On Edge Collapse of Random Simplicial Complexes</em>, SoCG 2024 ·
+  <a href="https://drops.dagstuhl.de/entities/document/10.4230/LIPIcs.SoCG.2024.21">paper (LIPIcs, SoCG 2024)</a><br>
+  Code: <a href="https://github.com/soumikdt/Edge-Collapse-On-Random-Clique-Complex">Edge-Collapse-On-Random-Clique-Complex</a>
+  — Python simulations of the edge collapse process on Erdős–Rényi clique complexes,
+  estimating the size of the core to support the theoretical results.</p>
+  </div>
+
+</main>
+
+<footer class="site">
+  <div class="wrap">Soumik Dutta · University of Warsaw</div>
+</footer>
+
+</body>
+</html>
