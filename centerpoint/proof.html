@@ -1,0 +1,704 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<style>body{margin:0}</style>
+</head>
+<body>
+<title>Centerpoint Proof Animation</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one stage (3D canvas) above a ledger canvas; caption and controls beside the stage on wide screens, below on phones */
+:root {
+  --bg: #F4F6F8;
+  --surface: #FFFFFF;
+  --ink: #1A2030;
+  --muted: #5B6476;
+  --line: #D4D9E2;
+  --accent: #0D6A72;
+  --accent-soft: #D3EAEA;
+  --hs: #A86C12;
+  --hs-soft: rgba(168, 108, 18, 0.16);
+  --neg: #8892A6;
+  --plane: rgba(13, 106, 114, 0.13);
+  --f-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --f-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141B; --surface: #171C26; --ink: #E5E8EE; --muted: #9AA3B4; --line: #2B3242;
+    --accent: #52B9C0; --accent-soft: #163A3E; --hs: #E1A84C; --hs-soft: rgba(225, 168, 76, 0.17);
+    --neg: #737D92; --plane: rgba(82, 185, 192, 0.14); color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10141B; --surface: #171C26; --ink: #E5E8EE; --muted: #9AA3B4; --line: #2B3242;
+  --accent: #52B9C0; --accent-soft: #163A3E; --hs: #E1A84C; --hs-soft: rgba(225, 168, 76, 0.17);
+  --neg: #737D92; --plane: rgba(82, 185, 192, 0.14); color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 56px;
+}
+.wrap { max-width: 68rem; margin: 0 auto; display: grid; gap: 22px; }
+header { display: grid; gap: 8px; max-width: 46rem; }
+.eyebrow { font-family: var(--f-mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: clamp(1.8rem, 4.4vw, 2.6rem); line-height: 1.12; margin: 0; text-wrap: balance; }
+.lede { color: var(--muted); margin: 0; }
+var { font-family: var(--f-display); font-style: italic; font-size: 1.07em; }
+
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 18px; align-items: start; }
+@media (max-width: 900px) { .stage { grid-template-columns: 1fr; } }
+.canvas-box { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; min-width: 0; }
+canvas { display: block; width: 100%; }
+.side { display: grid; gap: 14px; min-width: 0; }
+.steps { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.steps button {
+  font: inherit; font-family: var(--f-mono); font-size: 0.78rem; padding: 6px 0; border-radius: 4px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--muted); cursor: pointer;
+}
+.steps button[aria-current="step"] { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.steps button.done { color: var(--ink); border-color: var(--accent); }
+.caption { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 16px 18px; display: grid; gap: 8px; min-height: 13rem; }
+.caption h2 { font-family: var(--f-display); font-weight: 600; font-size: 1.3rem; margin: 0; line-height: 1.2; }
+.caption p { margin: 0; font-size: 0.95rem; }
+.caption .formula { font-family: var(--f-display); font-size: 1.08rem; color: var(--accent); }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  font: inherit; font-size: 0.88rem; padding: 8px 14px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+.btn.primary { background: var(--ink); color: var(--surface); border-color: var(--ink); min-width: 6.5rem; }
+.btn:hover { border-color: var(--accent); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.82rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+footer { font-size: 0.82rem; color: var(--muted); max-width: 46rem; }
+.pipe-wrap { display: grid; gap: 8px; }
+.pipe { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { font-size: 0.84rem; padding: 5px 11px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); }
+.chip b { font-family: var(--f-display); font-style: italic; font-weight: 600; font-size: 1.08em; color: var(--ink); }
+.chip.on { border-color: var(--accent); background: var(--accent-soft); color: var(--ink); }
+.arr { color: var(--muted); font-size: 0.85rem; }
+.pipe-note { font-size: 0.85rem; color: var(--muted); margin: 0; }
+.qty { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; display: grid; }
+.qrow { display: grid; grid-template-columns: 2.6rem minmax(0, 1fr); gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--line); border-left: 3px solid transparent; }
+.qrow:last-child { border-bottom: 0; }
+.qrow.on { border-left-color: var(--hs); background: var(--hs-soft); }
+.qname { font-family: var(--f-display); font-style: italic; font-size: 1.3rem; line-height: 1.2; }
+.qval { display: grid; gap: 3px; min-width: 0; font-size: 0.82rem; color: var(--muted); }
+.qval .num { font-family: var(--f-mono); font-size: 0.82rem; color: var(--ink); font-variant-numeric: tabular-nums; white-space: pre-wrap; overflow-wrap: anywhere; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Proposition 6 · the proof, one move at a time</div>
+    <h1>Why the weighted mean is deep</h1>
+    <p class="lede">The proof follows 24 sample points as they are lifted, transformed, normalized and projected. In the end the projected values force many points into every halfspace through <var>c</var>.</p>
+  </header>
+
+  <div class="pipe-wrap">
+    <div class="eyebrow">Order of computation in the algorithm</div>
+    <div class="pipe" id="pipe">
+      <span class="chip" data-key="lift">Lift <b>vᵢ</b> = (pᵢ, 1)</span><span class="arr">→</span>
+      <span class="chip" data-key="A">Forster map <b>A</b></span><span class="arr">→</span>
+      <span class="chip" data-key="q">Normalizers <b>qᵢ</b> ≈ ‖Avᵢ‖</span><span class="arr">→</span>
+      <span class="chip" data-key="y"><b>yᵢ</b> = Avᵢ/qᵢ, check S ⪰ γI</span><span class="arr">→</span>
+      <span class="chip" data-key="c"><b>c</b> = Σpᵢ/qᵢ ÷ Σ1/qᵢ</span>
+    </div>
+    <div class="eyebrow" style="margin-top:6px">Used only in the proof, for one halfspace at a time</div>
+    <div class="pipe" id="pipe2">
+      <span class="chip" data-key="a">Direction <b>a</b>: halfspace aᵀ(x − c) ≥ 0</span><span class="arr">→</span>
+      <span class="chip" data-key="h"><b>h</b> = (a, −aᵀc): the same halfspace, lifted</span><span class="arr">→</span>
+      <span class="chip" data-key="t">Normal <b>t</b> = A⁻ᵀh after the map A</span><span class="arr">→</span>
+      <span class="chip" data-key="z">Projection <b>zᵢ</b> = ⟨t̂, yᵢ⟩ ∈ [−1, 1]</span><span class="arr">→</span>
+      <span class="chip" data-key="count">Balance Σzᵢ = 0 ⇒ <b>count</b> ≥ mγ/2</span>
+    </div>
+    <p class="pipe-note">c is computed last, from A and the qᵢ. The proof below starts from c and then shows why it is deep, so the highlighted chip tells you which quantity each step is about.</p>
+  </div>
+
+  <div class="stage">
+    <div class="canvas-box"><canvas id="scene" aria-label="Animated three-dimensional view of the proof"></canvas></div>
+    <div class="side">
+      <div class="steps" role="group" aria-label="Proof steps" id="steps"></div>
+      <div class="controls">
+        <button type="button" class="btn" id="prev" aria-label="Previous step">◀ Prev</button>
+        <button type="button" class="btn primary" id="play">Pause</button>
+        <button type="button" class="btn" id="next" aria-label="Next step">Next ▶</button>
+        <button type="button" class="btn" id="restart">Restart</button>
+      </div>
+      <div class="caption" aria-live="polite">
+        <div class="eyebrow" id="cap-n">Step 1 of 7</div>
+        <h2 id="cap-h"></h2>
+        <p id="cap-p"></p>
+        <p class="formula" id="cap-f"></p>
+      </div>
+      <div class="qty" aria-label="The quantities A, q and c for this sample">
+        <div class="qrow" id="q-A"><div class="qname">A</div><div class="qval"><span class="num" id="Amat"></span><span>Forster map on the lifted vectors (3 × 3). It spreads their directions evenly. Its scale does not matter.</span></div></div>
+        <div class="qrow" id="q-q"><div class="qname">qᵢ</div><div class="qval"><span class="num" id="qrange"></span><span>From the doubling loop: ‖Avᵢ‖ ≤ qᵢ ≤ 2‖Avᵢ‖. Far-out points get large qᵢ.</span></div></div>
+        <div class="qrow" id="q-c"><div class="qname">c</div><div class="qval"><span class="num" id="cval"></span><span>Average of the original pᵢ with weights 1/qᵢ.</span></div></div>
+        <div class="qrow" id="q-h"><div class="qname">h</div><div class="qval"><span class="num" id="hval"></span><span>The halfspace in lifted coordinates: hᵀvᵢ = aᵀpᵢ − aᵀc = ℓ(pᵢ). It is the normal of the plane through the origin.</span></div></div>
+        <div class="qrow" id="q-z"><div class="qname">zᵢ</div><div class="qval"><span class="num" id="zval"></span><span>Projection of each yᵢ onto the unit normal t̂. Its sign says which side pᵢ is on.</span></div></div>
+        <div class="qrow" id="q-n"><div class="qname">#</div><div class="qval"><span class="num" id="nval"></span><span>Points inside this halfspace, compared with the bound.</span></div></div>
+      </div>
+      <div class="legend">
+        <span><i class="sw" style="background:var(--accent)"></i>data point</span>
+        <span><i class="sw" style="background:var(--hs)"></i>in the halfspace (zᵢ ≥ 0)</span>
+        <span><i class="sw" style="background:var(--neg)"></i>outside (zᵢ &lt; 0)</span>
+        <span><i class="sw" style="background:var(--ink)"></i>c and its images</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="canvas-box"><canvas id="ledger" aria-label="Number line of the projections and the counting inequality"></canvas></div>
+
+  <footer>The points are recentred and rescaled for display; this does not change depth. <var>A</var> comes from a Forster iteration and is taken symmetric, so the morph from the identity has no spurious rotation. The halfspace shown is the worst direction for <var>c</var>, where the fewest points are inside. The count uses γ = λ<sub>min</sub>(<var>S</var>), the sharpest γ this sample allows; the algorithm only certifies γ = 1/(8<var>r</var>).</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  /* ================= data and the certificate ================= */
+  function mulberry(seed) {
+    return function () {
+      seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+      var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+      t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+      return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+  }
+  function gauss(r) { var u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  function dot(a, b) { return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]; }
+  function cross(a, b) { return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]; }
+  function scl(a, s) { return [a[0] * s, a[1] * s, a[2] * s]; }
+  function add(a, b) { return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]; }
+  function lerp3(a, b, u) { return [a[0] + (b[0] - a[0]) * u, a[1] + (b[1] - a[1]) * u, a[2] + (b[2] - a[2]) * u]; }
+  function norm(a) { return Math.sqrt(dot(a, a)); }
+  function unit(a) { var n = norm(a); return [a[0] / n, a[1] / n, a[2] / n]; }
+  function mv(A, x) { return [dot(A[0], x), dot(A[1], x), dot(A[2], x)]; }
+  function matmul(A, B) {
+    var C = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) for (var k = 0; k < 3; k++) C[i][j] += A[i][k] * B[k][j];
+    return C;
+  }
+  function T(A) { return [[A[0][0], A[1][0], A[2][0]], [A[0][1], A[1][1], A[2][1]], [A[0][2], A[1][2], A[2][2]]]; }
+  function inv3(m) {
+    var a = m[0][0], b = m[0][1], c = m[0][2], d = m[1][0], e = m[1][1], f = m[1][2], g = m[2][0], h = m[2][1], k = m[2][2];
+    var A = e * k - f * h, B = -(d * k - f * g), C = d * h - e * g, det = a * A + b * B + c * C;
+    return [[A / det, -(b * k - c * h) / det, (b * f - c * e) / det],
+            [B / det, (a * k - c * g) / det, -(a * f - c * d) / det],
+            [C / det, -(a * h - b * g) / det, (a * e - b * d) / det]];
+  }
+  function jacobi(M) {
+    var a = M.map(function (r) { return r.slice(); }), v = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+    for (var sweep = 0; sweep < 60; sweep++) {
+      if (a[0][1] * a[0][1] + a[0][2] * a[0][2] + a[1][2] * a[1][2] < 1e-24) break;
+      for (var p = 0; p < 2; p++) for (var q = p + 1; q < 3; q++) {
+        if (Math.abs(a[p][q]) < 1e-300) continue;
+        var th = (a[q][q] - a[p][p]) / (2 * a[p][q]);
+        var t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c, k;
+        for (k = 0; k < 3; k++) { var x = a[k][p], y = a[k][q]; a[k][p] = c * x - s * y; a[k][q] = s * x + c * y; }
+        for (k = 0; k < 3; k++) { x = a[p][k]; y = a[q][k]; a[p][k] = c * x - s * y; a[q][k] = s * x + c * y; }
+        for (k = 0; k < 3; k++) { x = v[k][p]; y = v[k][q]; v[k][p] = c * x - s * y; v[k][q] = s * x + c * y; }
+      }
+    }
+    return { vals: [a[0][0], a[1][1], a[2][2]], vecs: v };
+  }
+  function symPow(M, pw) {
+    var E = jacobi(M), Q = E.vecs, D = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (var i = 0; i < 3; i++) D[i][i] = Math.pow(E.vals[i], pw);
+    return matmul(matmul(Q, D), T(Q));
+  }
+  function moment(Y) {
+    var M = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    Y.forEach(function (y) { for (var i = 0; i < 3; i++) for (var j = 0; j < 3; j++) M[i][j] += y[i] * y[j] / Y.length; });
+    return M;
+  }
+
+  // sample: tilted cloud plus a few stragglers, recentred and rescaled for display
+  var rnd = mulberry(29), raw = [], i;
+  for (i = 0; i < 19; i++) { var x = 1.3 * gauss(rnd), y = 0.5 * gauss(rnd); raw.push([x * 0.88 - y * 0.47, x * 0.47 + y * 0.88]); }
+  for (i = 0; i < 5; i++) raw.push([2.6 + 1.6 * rnd(), -2.2 + 1.2 * rnd()]);
+  var mx = 0, my = 0; raw.forEach(function (p) { mx += p[0] / raw.length; my += p[1] / raw.length; });
+  var ext = 0; raw.forEach(function (p) { ext = Math.max(ext, Math.abs(p[0] - mx), Math.abs(p[1] - my)); });
+  var P = raw.map(function (p) { return [1.2 * (p[0] - mx) / ext, 1.2 * (p[1] - my) / ext]; });
+  var n = P.length;
+  var Vl = P.map(function (p) { return [p[0], p[1], 1]; });
+
+  // Forster iteration, then take the symmetric polar factor (same norms and spectrum)
+  var A = [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
+  for (var it = 0; it < 1500; it++) {
+    var M = moment(Vl.map(function (v) { return unit(mv(A, v)); }));
+    var E = jacobi(M).vals, dev = Math.max(Math.abs(3 * E[0] - 1), Math.abs(3 * E[1] - 1), Math.abs(3 * E[2] - 1));
+    if (dev < 1e-7) break;
+    A = matmul(symPow(scl3(M, 3), -0.5), A);
+  }
+  function scl3(M, s) { return M.map(function (r) { return r.map(function (x) { return x * s; }); }); }
+  A = symPow(matmul(T(A), A), 0.5);
+  var W = Vl.map(function (v) { return mv(A, v); });
+  var q = W.map(function (w) {               // doubling loop of Lemma 3
+    var qq = Math.max(Math.abs(w[0]), Math.abs(w[1]), Math.abs(w[2])), s = dot(w, w);
+    while (qq * qq < s) qq *= 2;
+    return qq;
+  });
+  var Y = W.map(function (w, i) { return scl(w, 1 / q[i]); });
+  var lamS = jacobi(moment(Y)).vals.sort(function (a, b) { return a - b; });
+  var wts = q.map(function (x) { return 1 / x; }), wmax = Math.max.apply(null, wts);
+  var track = 0; q.forEach(function (x, i) { if (x > q[track]) track = i; });
+  var Wsum = 0, c = [0, 0];
+  P.forEach(function (p, i) { Wsum += 1 / q[i]; c[0] += p[0] / q[i]; c[1] += p[1] / q[i]; });
+  c = [c[0] / Wsum, c[1] / Wsum];
+  var ybar = [0, 0, 0]; Y.forEach(function (y) { ybar = add(ybar, scl(y, 1 / n)); });
+
+  // worst direction for c
+  function countAt(th) {
+    var a = [Math.cos(th), Math.sin(th)], k = 0;
+    P.forEach(function (p) { if (a[0] * (p[0] - c[0]) + a[1] * (p[1] - c[1]) >= -1e-12) k++; });
+    return k;
+  }
+  var crit = [];
+  P.forEach(function (p) { var ph = Math.atan2(p[1] - c[1], p[0] - c[0]); crit.push(ph + Math.PI / 2, ph - Math.PI / 2); });
+  crit = crit.map(function (x) { x %= 2 * Math.PI; return x < 0 ? x + 2 * Math.PI : x; }).sort(function (a, b) { return a - b; });
+  var best = n + 1, theta = 0;
+  for (i = 0; i < crit.length; i++) {
+    var a0 = crit[i], a1 = i + 1 < crit.length ? crit[i + 1] : crit[0] + 2 * Math.PI;
+    if (a1 - a0 < 1e-9) continue;
+    var k0 = countAt((a0 + a1) / 2);
+    if (k0 < best) { best = k0; theta = (a0 + a1) / 2; }
+  }
+  var a2 = [Math.cos(theta), Math.sin(theta)];
+  var h = [a2[0], a2[1], -(a2[0] * c[0] + a2[1] * c[1])];
+  var Ainv = inv3(A);
+  var t = mv(T(Ainv), h), that = unit(t);
+  var z = Y.map(function (y) { return dot(that, y); });
+  var inside = P.map(function (p) { return a2[0] * (p[0] - c[0]) + a2[1] * (p[1] - c[1]) >= -1e-12; });
+  var gamma = null;
+  gamma = lamS[0];
+  var sumPos = 0, sumNeg = 0, sumSq = 0, nPos = 0;
+  z.forEach(function (v) { if (v > 0) { sumPos += v; nPos++; } else sumNeg -= v; sumSq += v * v; });
+  var wn = W.map(norm).sort(function (a, b) { return a - b; }), dispS = 1.0 / wn[Math.floor(0.8 * (n - 1))];
+
+  /* ================= steps and narration ================= */
+  var qsc = 1 / Math.max.apply(null, A.map(function (r) { return Math.max.apply(null, r.map(Math.abs)); }));
+  (function fillPanel() {
+    var sc = qsc;
+    document.getElementById("Amat").textContent = A.map(function (r) {
+      return "[" + r.map(function (x) { var v = (x * sc).toFixed(2); return (v[0] === "-" ? "" : " ") + v; }).join(" ") + " ]";
+    }).join("\n");
+    var qs = q.map(function (x) { return x * sc; }), qmin = Math.min.apply(null, qs), qmax = Math.max.apply(null, qs);
+    document.getElementById("qrange").textContent = n + " values, from " + qmin.toFixed(2) + " to " + qmax.toFixed(2) + " (largest/smallest = " + (qmax / qmin).toFixed(1) + ")";
+    var pm = [0, 0]; P.forEach(function (p) { pm[0] += p[0] / n; pm[1] += p[1] / n; });
+    document.getElementById("hval").textContent = "a = (" + a2[0].toFixed(2) + ", " + a2[1].toFixed(2) + ")\nh = (a, −aᵀc) = (" + h[0].toFixed(2) + ", " + h[1].toFixed(2) + ", " + h[2].toFixed(2) + ")";
+    document.getElementById("zval").textContent = "Σzᵢ = " + Math.abs(z.reduce(function (a, b) { return a + b; }, 0)).toFixed(3) + "   Σzᵢ² = " + sumSq.toFixed(2) + "\n" + nPos + " positive, " + (n - nPos) + " negative, all in [" + Math.min.apply(null, z).toFixed(2) + ", " + Math.max.apply(null, z).toFixed(2) + "]";
+    document.getElementById("nval").textContent = "#{zᵢ > 0} = " + nPos + "  ≥  mγ/2 = " + (n * gamma / 2).toFixed(2);
+    document.getElementById("cval").textContent = "c = (" + c[0].toFixed(2) + ", " + c[1].toFixed(2) + ")\nplain mean = (" + pm[0].toFixed(2) + ", " + pm[1].toFixed(2) + ")";
+  })();
+  var STEPS = [
+    { h: "A halfspace through c", p: "Start in the plane. The cross is c, already computed from A and the qᵢ: dot size shows each weight 1/qᵢ, so the far-out points barely count. The shaded side is a closed halfspace with its edge through c. We must show it holds many points.", f: "c = Σpᵢ/qᵢ ÷ Σ1/qᵢ,   ℓ(x) = aᵀ(x − c) ≥ 0" },
+    { h: "Lift to height 1", p: "Each point rises to vᵢ = (pᵢ, 1). The edge-line rises with them and, together with the origin, spans a plane through the origin. Its normal is h = (a, −aᵀc): the first d entries are the direction a, the last entry shifts the edge to pass through c. Then hᵀvᵢ = aᵀpᵢ − aᵀc = ℓ(pᵢ), so the side of a point is the sign of one dot product.", f: "h = (a, −aᵀc),   hᵀvᵢ = ℓ(pᵢ)" },
+    { h: "Apply the Forster map A", p: "Each lifted point vᵢ moves to wᵢ = Avᵢ (shown at a common scale). A spreads the directions evenly. It is linear, so the plane through the origin stays a plane through the origin, and every point keeps its side.", f: "tᵀAvᵢ = hᵀvᵢ,  t = A⁻ᵀh" },
+    { h: "Normalize by qᵢ > 0", p: "Each wᵢ = Avᵢ is divided by its own qᵢ ≈ ‖Avᵢ‖ (the ringed point shows one), so it lands inside the unit ball. The black arrow is the mean of the yᵢ. It points along A(c, 1), so it lies in the plane. This is what the 1/qᵢ weights in c buy.", f: "yᵢ = Avᵢ/qᵢ,  ‖yᵢ‖ ≤ 1,  Σyᵢ ∝ A(c, 1)" },
+    { h: "Project onto the normal t", p: "Next, the halfspace enters. Its plane through the origin has normal t = A⁻ᵀh; t̂ is t scaled to length 1. Every yᵢ drops onto this axis (the ringed point shows one). Its coordinate zᵢ lies in [−1, 1], and zᵢ ≥ 0 exactly when pᵢ is in the halfspace. The mean arrow lies in the plane, so it projects to 0.", f: "zᵢ = ⟨t̂, yᵢ⟩ = ℓ(pᵢ)/(qᵢ‖t‖)" },
+    { h: "Balance forces a count", p: "Next, the projections are counted. The positive and negative parts weigh the same, since Σzᵢ = 0. Spread gives Σzᵢ² ≥ mγ. Each |zᵢ| ≤ 1, so squares are at most absolute values, and each positive value counts for at most 1.", f: "mγ ≤ Σzᵢ² ≤ Σ|zᵢ| = 2Σ₊zᵢ ≤ 2·#{zᵢ > 0}" },
+    { h: "Back in the plane", p: "Each positive zᵢ is a point inside the halfspace. So this halfspace, the worst one for c, holds at least mγ/2 points. Nothing in the argument depended on the direction.", f: "#points in halfspace ≥ mγ/2" }
+  ];
+  var NS = STEPS.length, ANIM = 4.2, HOLD = 2.6, DUR = ANIM + HOLD;
+
+  var stepsEl = document.getElementById("steps");
+  STEPS.forEach(function (s, k) {
+    var b = document.createElement("button");
+    b.type = "button"; b.id = "step-" + (k + 1); b.textContent = String(k + 1);
+    b.setAttribute("aria-label", "Step " + (k + 1) + ": " + s.h);
+    b.addEventListener("click", function () { jump(k); });
+    stepsEl.appendChild(b);
+  });
+
+  /* ================= clock ================= */
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var clock = reduce ? ANIM : 0, playing = !reduce, last = null, shownStep = -1;
+  var playBtn = document.getElementById("play");
+  function setPlaying(p) { playing = p; playBtn.textContent = p ? "Pause" : (clock >= NS * DUR - 0.01 ? "Replay" : "Play"); }
+  function jump(k) {
+    k = Math.max(0, Math.min(NS - 1, k));
+    if (reduce) { clock = k * DUR + ANIM; setPlaying(false); }
+    else { clock = k * DUR; setPlaying(true); }
+  }
+  playBtn.addEventListener("click", function () {
+    if (!playing && clock >= NS * DUR - 0.01) clock = 0;
+    setPlaying(!playing);
+  });
+  document.getElementById("prev").addEventListener("click", function () { jump(Math.floor(clock / DUR) - (clock % DUR < 0.6 ? 1 : 0)); });
+  document.getElementById("next").addEventListener("click", function () { jump(Math.floor(clock / DUR) + 1); });
+  document.getElementById("restart").addEventListener("click", function () { jump(0); });
+  setPlaying(playing);
+
+  /* ================= drawing setup ================= */
+  var scene = document.getElementById("scene"), ledger = document.getElementById("ledger");
+  var sctx = scene.getContext("2d"), lctx = ledger.getContext("2d");
+  var colors = {};
+  function readColors() {
+    var cs = getComputedStyle(document.documentElement);
+    ["bg", "surface", "ink", "muted", "line", "accent", "accent-soft", "hs", "hs-soft", "neg", "plane"].forEach(function (k) { colors[k] = cs.getPropertyValue("--" + k).trim(); });
+  }
+  function fit(cv, cssH) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth;
+    cv.style.height = cssH + "px";
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(cssH * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(cssH * dpr); }
+    var ctx = cv.getContext("2d"); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: w, h: cssH };
+  }
+  function ease(u) { u = Math.max(0, Math.min(1, u)); return u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2; }
+  function mix(a, b, u) { return a + (b - a) * u; }
+
+  /* ================= per-frame state from (k, u) ================= */
+  function Mof(u) {   // (1-u) I + u * dispS * A
+    var M = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+    for (var r = 0; r < 3; r++) for (var s = 0; s < 3; s++) M[r][s] = (r === s ? 1 - u : 0) + u * dispS * A[r][s];
+    return M;
+  }
+  function frameState(k, u) {
+    var S = { k: k, u: u };
+    S.elev = k === 0 ? 90 : k === 1 ? mix(90, 24, u) : k === 6 ? mix(24, 90, u) : 24;
+    S.target = k === 0 ? [0, 0, 0] : k === 1 ? [0, 0, 0.5 * u] : k === 2 ? [0, 0, 0.5 * (1 - u)] : [0, 0, 0];
+    if (k === 6) S.target = [0, 0, 0];
+    S.pts = P.map(function (p, i) {
+      var base = [p[0], p[1], 0], lifted = [p[0], p[1], 1], disp = mv(Mof(1), Vl[i]), zt = scl(that, z[i]);
+      if (k === 0) return base;
+      if (k === 1) return [p[0], p[1], u];
+      if (k === 2) return mv(Mof(u), lifted);
+      if (k === 3) return lerp3(disp, Y[i], u);
+      if (k === 4) return lerp3(Y[i], zt, u);
+      if (k === 5) return zt;
+      return lerp3(zt, base, u);
+    });
+    var cl = [c[0], c[1], 1], cDisp = mv(Mof(1), cl);
+    S.cpt = k === 0 ? [c[0], c[1], 0] : k === 1 ? [c[0], c[1], u] : k === 2 ? mv(Mof(u), cl) :
+            k === 3 ? lerp3(cDisp, ybar, u) : k === 4 || k === 5 ? ybar : lerp3(ybar, [c[0], c[1], 0], u);
+    S.arrow = k === 3 ? u : (k === 4 || k === 5) ? 1 : k === 6 ? 1 - u : 0;
+    S.halfSq = k === 0 ? { z: 0, a: 1 } : k === 1 ? { z: u, a: 1 } : k === 2 ? { z: 1, a: 1 - u } : k === 6 ? { z: 0, a: u } : null;
+    var nrm = null, pa = 0;
+    if (k === 1) { nrm = h; pa = u; }
+    else if (k === 2) { nrm = mv(T(inv3(Mof(u))), h); pa = 1; }
+    else if (k >= 3 && k <= 5) { nrm = t; pa = 1; }
+    else if (k === 6) { nrm = t; pa = 1 - u; }
+    S.plane = nrm ? { n: unit(nrm), a: pa } : null;
+    S.rays = k === 1 ? u : (k === 2 || k === 3) ? 1 : k === 4 ? 1 - u : 0;
+    S.sphere = k === 3 ? u : (k === 4 || k === 5) ? 1 : k === 6 ? 1 - u : 0;
+    S.axis = k === 4 ? Math.min(1, u * 2) : k === 5 ? 1 : k === 6 ? 1 - u : 0;
+    S.signColor = k >= 4 ? 1 : 0;
+    S.finalColor = k === 6 ? u : 0;
+    return S;
+  }
+
+  /* ================= 3D scene ================= */
+  function drawScene(S, time) {
+    var dim = fit(scene, Math.max(320, Math.min(560, scene.clientWidth * 0.68)));
+    var w = dim.w, hgt = dim.h, ctx = sctx;
+    ctx.clearRect(0, 0, w, hgt);
+    var SC = Math.min(w, hgt) / 3.6;
+    var tilt01 = (90 - S.elev) / 66;
+    var yaw = (-0.35 + (S.k >= 1 && S.k <= 5 ? 0.22 * Math.sin(time * 0.35) : 0)) * tilt01;
+    var e = S.elev * Math.PI / 180, ce = Math.cos(e), se = Math.sin(e), cy = Math.cos(yaw), sy = Math.sin(yaw);
+    var cx0 = w / 2, cy0 = hgt / 2;
+    function proj(p) {
+      var x = p[0] - S.target[0], y = p[1] - S.target[1], zz = p[2] - S.target[2];
+      var xr = x * cy - y * sy, yr = x * sy + y * cy;
+      return { x: cx0 + SC * xr, y: cy0 - SC * (zz * ce + yr * se), d: -yr * ce + zz * se };
+    }
+    function poly(pts, fill, stroke, alpha) {
+      if (pts.length < 3) return;
+      ctx.globalAlpha = alpha; ctx.beginPath();
+      pts.forEach(function (p, i) { var s = proj(p); if (i) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y); });
+      ctx.closePath();
+      if (fill) { ctx.fillStyle = fill; ctx.fill(); }
+      if (stroke) { ctx.strokeStyle = stroke; ctx.lineWidth = 1; ctx.stroke(); }
+      ctx.globalAlpha = 1;
+    }
+    function seg(p1, p2, col, lw, alpha, dash) {
+      var a = proj(p1), b = proj(p2);
+      ctx.globalAlpha = alpha; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []);
+      ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    }
+    function label(p, txt, col, dx, dy, font) {
+      var s = proj(p); ctx.fillStyle = col; ctx.font = font || "13px 'IBM Plex Sans', system-ui, sans-serif";
+      ctx.fillText(txt, s.x + (dx || 0), s.y + (dy || 0));
+    }
+    var L = 1.3;
+    // ground square at z = 0 (input plane) or the lifted square
+    var gz = S.k === 0 ? 0 : S.k === 1 ? S.u : S.k === 6 ? 0 : 1;
+    var groundA = S.k <= 1 ? 1 : S.k === 2 ? 1 - S.u : S.k === 6 ? S.u : 0;
+    if (groundA > 0) {
+      poly([[-L, -L, gz], [L, -L, gz], [L, L, gz], [-L, L, gz]], null, colors.line, groundA);
+      if (S.k === 1 && S.u > 0.3) label([-L, L, gz], "height 1", colors.muted, 4, -6);
+      if (S.k === 0 || (S.k === 6 && S.u > 0.6)) label([-L, -L, 0], "the input plane ℝ²", colors.muted, 4, 16);
+    }
+    // halfspace region in the (lifted) square
+    if (S.halfSq && S.halfSq.a > 0) {
+      var sq = [[-L, -L], [L, -L], [L, L], [-L, L]], out = [];
+      var f = function (p) { return a2[0] * (p[0] - c[0]) + a2[1] * (p[1] - c[1]); };
+      for (var j = 0; j < 4; j++) {
+        var P1 = sq[j], P2 = sq[(j + 1) % 4], f1 = f(P1), f2 = f(P2);
+        if (f1 >= 0) out.push(P1);
+        if ((f1 >= 0) !== (f2 >= 0)) { var tt = f1 / (f1 - f2); out.push([P1[0] + tt * (P2[0] - P1[0]), P1[1] + tt * (P2[1] - P1[1])]); }
+      }
+      poly(out.map(function (p) { return [p[0], p[1], S.halfSq.z]; }), colors["hs-soft"], null, S.halfSq.a);
+      var u2 = [-a2[1], a2[0]], big = 3;
+      var e1 = [c[0] + big * u2[0], c[1] + big * u2[1]], e2 = [c[0] - big * u2[0], c[1] - big * u2[1]];
+      // clip the edge-line to the square
+      var lo = -big, hi = big;
+      [0, 1].forEach(function (ax) {
+        if (Math.abs(u2[ax]) > 1e-9) {
+          var t1 = (-L - c[ax]) / u2[ax], t2 = (L - c[ax]) / u2[ax];
+          lo = Math.max(lo, Math.min(t1, t2)); hi = Math.min(hi, Math.max(t1, t2));
+        }
+      });
+      seg([c[0] + lo * u2[0], c[1] + lo * u2[1], S.halfSq.z], [c[0] + hi * u2[0], c[1] + hi * u2[1], S.halfSq.z], colors.hs, 2, S.halfSq.a);
+    }
+    // unit sphere
+    if (S.sphere > 0) {
+      var o = proj([0, 0, 0]);
+      ctx.globalAlpha = S.sphere; ctx.strokeStyle = colors.line; ctx.lineWidth = 1.2;
+      ctx.beginPath(); ctx.arc(o.x, o.y, SC, 0, 2 * Math.PI); ctx.stroke();
+      ctx.beginPath();
+      for (var a = 0; a <= 64; a++) { var s = proj([Math.cos(a / 32 * Math.PI), Math.sin(a / 32 * Math.PI), 0]); if (a) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y); }
+      ctx.stroke(); ctx.globalAlpha = 1;
+      if (S.k >= 3 && S.k <= 5) label([0, 0, 1], "unit ball", colors.muted, 6, -4);
+    }
+    // plane through the origin
+    if (S.plane && S.plane.a > 0) {
+      var nn = S.plane.n, b1 = cross(nn, [0, 0, 1]);
+      if (norm(b1) < 1e-6) b1 = [1, 0, 0];
+      b1 = unit(b1); var b2 = cross(nn, b1), R = 1.35;
+      poly([add(scl(b1, R), scl(b2, R)), add(scl(b1, -R), scl(b2, R)), add(scl(b1, -R), scl(b2, -R)), add(scl(b1, R), scl(b2, -R))],
+           colors.plane, colors.accent, S.plane.a * 0.95);
+      if (S.k >= 1 && S.k <= 3) label(add(scl(b1, R), scl(b2, R)), "plane through the origin", colors.accent, 6, 0);
+    }
+    // direction a in the plane (step 1) and the lifted normal h -> t (steps 2-3)
+    if (S.k === 0) {
+      var cA = [c[0], c[1], 0], tipA = [c[0] + 0.45 * a2[0], c[1] + 0.45 * a2[1], 0];
+      seg(cA, tipA, colors.hs, 2.4, 1);
+      var ta = proj(tipA); ctx.fillStyle = colors.hs; ctx.beginPath(); ctx.arc(ta.x, ta.y, 3.5, 0, 7); ctx.fill();
+      ctx.font = "italic 16px 'Newsreader', Georgia, serif"; ctx.fillText("a", ta.x + 7, ta.y + 5);
+    }
+    if ((S.k === 1 || S.k === 2) && S.plane) {
+      var al = S.k === 1 ? S.u : 1, tipH = scl(S.plane.n, 0.75);
+      seg([0, 0, 0], tipH, colors.hs, 2.6, al);
+      var th2 = proj(tipH); ctx.globalAlpha = al; ctx.fillStyle = colors.hs; ctx.beginPath(); ctx.arc(th2.x, th2.y, 3.5, 0, 7); ctx.fill();
+      ctx.font = "italic 16px 'Newsreader', Georgia, serif";
+      ctx.fillText(S.k === 1 ? "h = (a, −aᵀc)" : (S.u < 0.5 ? "h" : "t = A⁻ᵀh"), th2.x + 8, th2.y + 5);
+      ctx.globalAlpha = 1;
+    }
+    // normal axis t
+    if (S.axis > 0) {
+      seg(scl(that, -1.15), scl(that, 1.15), colors.ink, 1.5, S.axis);
+      [-1, 1].forEach(function (v) { var p = proj(scl(that, v)); ctx.globalAlpha = S.axis; ctx.fillStyle = colors.ink; ctx.beginPath(); ctx.arc(p.x, p.y, 3, 0, 7); ctx.fill(); ctx.globalAlpha = 1; });
+      ctx.globalAlpha = S.axis;
+      label(scl(that, 1.22), "t̂  (z = +1)", colors.hs, 4, 4);
+      label(scl(that, -1.22), "z = −1", colors.muted, 4, 4);
+      ctx.globalAlpha = 1;
+    }
+    // origin
+    if (S.k >= 1 && S.k <= 5) {
+      var o2 = proj([0, 0, 0]); ctx.fillStyle = colors.ink; ctx.beginPath(); ctx.arc(o2.x, o2.y, 3, 0, 7); ctx.fill();
+      label([0, 0, 0], "origin", colors.muted, 7, 14);
+    }
+    // rays
+    if (S.rays > 0) S.pts.forEach(function (p) { seg([0, 0, 0], p, colors.accent, 0.8, S.rays * 0.35); });
+    // mean arrow
+    if (S.arrow > 0) {
+      seg([0, 0, 0], S.cpt, colors.ink, 2.4, S.arrow);
+      ctx.globalAlpha = S.arrow;
+      label(S.cpt, "mean of yᵢ ∝ A(c,1)", colors.ink, 8, -6);
+      ctx.globalAlpha = 1;
+    }
+    // points, sorted by depth
+    var order = S.pts.map(function (p, i) { return { i: i, s: proj(p) }; }).sort(function (a, b) { return a.s.d - b.s.d; });
+    order.forEach(function (o) {
+      var i = o.i, col = colors.accent;
+      if (S.signColor) col = z[i] >= 0 ? colors.hs : colors.neg;
+      if (S.k === 0) col = colors.accent;
+      var rad = 4.6 + 0.9 * Math.max(-1, Math.min(1, o.s.d));
+      var wsz = S.k === 0 ? 1 : S.k === 6 ? S.u : 0;
+      if (wsz > 0) rad = mix(rad, 2.2 + 5.8 * Math.sqrt(wts[i] / wmax), wsz);
+      if ((S.k === 4 || S.k === 5) && i === track) {
+        var foot = proj(scl(that, z[track])), yy = proj(Y[track]);
+        ctx.strokeStyle = colors.hs; ctx.lineWidth = 1.2; ctx.setLineDash([4, 3]);
+        ctx.beginPath(); ctx.moveTo(yy.x, yy.y); ctx.lineTo(foot.x, foot.y); ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle = colors.hs; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(o.s.x, o.s.y, rad + 5, 0, 7); ctx.stroke();
+        ctx.fillStyle = colors.ink; ctx.font = "italic 15px 'Newsreader', Georgia, serif";
+        ctx.fillText("zᵢ = ⟨t̂, yᵢ⟩ = " + z[track].toFixed(2), o.s.x + rad + 10, o.s.y - 16);
+      }
+      if ((S.k === 2 || S.k === 3) && i === track) {
+        ctx.strokeStyle = colors.hs; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(o.s.x, o.s.y, rad + 5, 0, 7); ctx.stroke();
+        ctx.fillStyle = colors.ink; ctx.font = "italic 15px 'Newsreader', Georgia, serif";
+        var tl = S.k === 2 ? (S.u > 0.5 ? "Avᵢ" : "vᵢ") : (S.u > 0.5 ? "yᵢ = Avᵢ / qᵢ,  qᵢ = " + (q[track] * qsc).toFixed(2) : "Avᵢ  ÷ qᵢ");
+        ctx.fillText(tl, o.s.x + rad + 8, o.s.y + 5);
+      }
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(o.s.x, o.s.y, rad, 0, 7); ctx.fill();
+      if (S.k === 6 && S.u > 0.85 && inside[i]) { ctx.strokeStyle = colors.ink; ctx.lineWidth = 1.2; ctx.stroke(); }
+    });
+    // the centre c (as a cross) while it is a point
+    if (S.arrow < 1) {
+      var cs = proj(S.cpt), r = 7;
+      ctx.globalAlpha = 1 - S.arrow;
+      ctx.strokeStyle = colors.surface; ctx.lineWidth = 5;
+      ctx.beginPath(); ctx.moveTo(cs.x - r, cs.y - r); ctx.lineTo(cs.x + r, cs.y + r); ctx.moveTo(cs.x - r, cs.y + r); ctx.lineTo(cs.x + r, cs.y - r); ctx.stroke();
+      ctx.strokeStyle = colors.ink; ctx.lineWidth = 2.4; ctx.stroke();
+      ctx.fillStyle = colors.ink; ctx.font = "italic 17px 'Newsreader', Georgia, serif";
+      ctx.fillText(S.k >= 2 && S.k < 6 ? "A(c,1)" : "c", cs.x + 9, cs.y - 8);
+      if (S.k === 0 || S.k === 6) { ctx.font = "12.5px 'IBM Plex Mono', monospace"; ctx.fillText("c = Σpᵢ/qᵢ ÷ Σ1/qᵢ", cs.x - 40, cs.y + 26); }
+      ctx.globalAlpha = 1;
+    }
+    // step banner naming the quantity in play
+    var banner = S.k === 0 ? "dot size = weight 1/qᵢ" : S.k === 2 ? "applying A:  vᵢ ↦ Avᵢ" : S.k === 3 ? "dividing by qᵢ:  Avᵢ ↦ yᵢ = Avᵢ/qᵢ" :
+      S.k === 4 ? "projecting onto t̂:  yᵢ ↦ zᵢ = ⟨t̂, yᵢ⟩" : S.k === 5 ? "counting:  Σzᵢ = 0  ⇒  #{zᵢ > 0} ≥ mγ/2  (see below)" : null;
+    if (banner) {
+      ctx.font = "600 14px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillStyle = colors.accent;
+      ctx.fillText(banner, 14, hgt - 14);
+    }
+    // final count badge
+    if (S.k === 6 && S.u > 0.85) {
+      ctx.globalAlpha = Math.min(1, (S.u - 0.85) / 0.15);
+      var txt = best + " points inside   ≥   mγ/2 = " + (n * gamma / 2).toFixed(2) + "  (γ = λmin(S))";
+      ctx.font = "600 14px 'IBM Plex Sans', system-ui, sans-serif";
+      var tw = ctx.measureText(txt).width;
+      ctx.fillStyle = colors.surface; ctx.strokeStyle = colors.hs; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.rect(12, 12, tw + 24, 32); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = colors.ink; ctx.fillText(txt, 24, 33);
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  /* ================= ledger: number line and inequality chain ================= */
+  function drawLedger(S) {
+    var narrow = ledger.clientWidth < 640;
+    var dim = fit(ledger, narrow ? 470 : 260), w = dim.w, hgt = dim.h, ctx = lctx;
+    ctx.clearRect(0, 0, w, hgt);
+    var k = S.k, u = S.u;
+    var show = k < 4 ? 0 : k === 4 ? u : 1;
+    var font = "13px 'IBM Plex Sans', system-ui, sans-serif", mono = "12.5px 'IBM Plex Mono', ui-monospace, monospace";
+    // region boxes
+    var nl = narrow ? { x0: 22, x1: w - 22, y: 150 } : { x0: 26, x1: w * 0.54 - 10, y: 165 };
+    var ch = narrow ? { x0: 16, x1: w - 16, y0: 225 } : { x0: w * 0.58, x1: w - 20, y0: 34 };
+    ctx.font = "500 11px 'IBM Plex Mono', monospace"; ctx.fillStyle = colors.muted;
+    ctx.fillText("THE PROJECTIONS zᵢ", nl.x0, 24);
+    ctx.fillText("THE COUNT", ch.x0, narrow ? ch.y0 - 12 : 24);
+    if (show === 0) {
+      ctx.font = font; ctx.fillStyle = colors.muted;
+      ctx.fillText("Appears at step 5, once the points are projected onto t̂.", nl.x0, nl.y - 40);
+      ctx.fillText("Appears at step 6.", ch.x0, (narrow ? ch.y0 + 30 : ch.y0 + 40));
+      return;
+    }
+    var X = function (v) { return mix(nl.x0, nl.x1, (v + 1) / 2); };
+    ctx.globalAlpha = show;
+    ctx.strokeStyle = colors.muted; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(X(-1), nl.y); ctx.lineTo(X(1), nl.y); ctx.stroke();
+    [-1, -0.5, 0, 0.5, 1].forEach(function (v) {
+      ctx.strokeStyle = v === 0 ? colors.hs : colors.muted; ctx.lineWidth = v === 0 ? 1.5 : 1;
+      ctx.beginPath(); ctx.moveTo(X(v), nl.y + 5); ctx.lineTo(X(v), v === 0 ? nl.y - 110 : nl.y - 4); ctx.stroke();
+      ctx.fillStyle = colors.muted; ctx.font = mono; ctx.textAlign = "center";
+      ctx.fillText(v === 0.5 ? "½" : v === -0.5 ? "−½" : v === -1 ? "−1" : v === 1 ? "1" : "0", X(v), nl.y + 20);
+    });
+    ctx.textAlign = "left";
+    var bins = {};
+    z.forEach(function (v) {
+      var b = Math.round(X(v) / 9), kk = bins[b] = (bins[b] || 0) + 1;
+      ctx.fillStyle = v >= 0 ? colors.hs : colors.neg;
+      ctx.beginPath(); ctx.arc(X(v), nl.y - 7 - (kk - 1) * 9, 4, 0, 7); ctx.fill();
+    });
+    ctx.globalAlpha = 1;
+    // balance bars (step 6)
+    var bal = k === 5 ? Math.min(1, u / 0.3) : k === 6 ? 1 : 0;
+    if (bal > 0) {
+      var unitLen = (X(1) - X(0)) / Math.max(sumPos, 1e-9) * 0.92 * bal;
+      var by = nl.y - 92;
+      ctx.fillStyle = colors.hs; ctx.fillRect(X(0), by, sumPos * unitLen, 12);
+      ctx.fillStyle = colors.neg; ctx.fillRect(X(0) - sumNeg * unitLen, by, sumNeg * unitLen, 12);
+      ctx.font = mono; ctx.fillStyle = colors.ink;
+      ctx.textAlign = "right"; ctx.fillText("Σ₋|zᵢ| = " + sumNeg.toFixed(2), X(0) - 6, by - 6);
+      ctx.textAlign = "left"; ctx.fillText("Σ₊zᵢ = " + sumPos.toFixed(2), X(0) + 6, by - 6);
+      ctx.fillStyle = colors.accent; ctx.font = "500 13px 'IBM Plex Sans', sans-serif";
+      ctx.fillText("Σzᵢ = 0: the two sides weigh the same", nl.x0, nl.y + 44);
+    }
+    // chain (step 6)
+    var rows = [
+      { lab: "mγ", rel: "", v: n * gamma },
+      { lab: "Σzᵢ²", rel: "≤", v: sumSq },
+      { lab: "Σ|zᵢ|", rel: "≤", v: sumPos + sumNeg },
+      { lab: "2Σ₊zᵢ", rel: "=", v: 2 * sumPos },
+      { lab: "2·#{zᵢ>0}", rel: "≤", v: 2 * nPos }
+    ];
+    var chainP = k === 5 ? Math.max(0, (u - 0.3) / 0.7) : k === 6 ? 1 : 0;
+    var rowH = 30, lw = 104, vmax = 2 * nPos;
+    rows.forEach(function (r, idx) {
+      var appear = Math.max(0, Math.min(1, chainP * rows.length - idx));
+      if (appear <= 0) return;
+      var y = ch.y0 + 14 + idx * rowH;
+      ctx.globalAlpha = appear;
+      ctx.font = mono; ctx.fillStyle = colors.muted; ctx.fillText(r.rel, ch.x0, y + 10);
+      ctx.fillStyle = colors.ink; ctx.fillText(r.lab, ch.x0 + 18, y + 10);
+      var bx = ch.x0 + lw, bw = (ch.x1 - bx - 50) * r.v / vmax * appear;
+      ctx.fillStyle = idx === 0 ? colors.accent : idx === 4 ? colors.hs : colors["accent-soft"];
+      ctx.fillRect(bx, y, Math.max(2, bw), 14);
+      ctx.fillStyle = colors.ink; ctx.fillText(r.v.toFixed(2), bx + Math.max(2, bw) + 6, y + 11);
+      ctx.globalAlpha = 1;
+    });
+    if (chainP >= 1) {
+      var y2 = ch.y0 + 14 + rows.length * rowH + 14;
+      ctx.font = "600 14px 'IBM Plex Sans', sans-serif"; ctx.fillStyle = colors.ink;
+      ctx.fillText("⇒  #{zᵢ > 0} = " + nPos + "  ≥  mγ/2 = " + (n * gamma / 2).toFixed(2), ch.x0, y2);
+      ctx.font = font; ctx.fillStyle = colors.muted;
+      ctx.fillText("m = " + n + ",  γ = λmin(S) = " + lamS[0].toFixed(3) + "  (certified threshold 1/(8r) = 0.042)", ch.x0, y2 + 22);
+    }
+  }
+
+  /* ================= loop ================= */
+  var capN = document.getElementById("cap-n"), capH = document.getElementById("cap-h"), capP = document.getElementById("cap-p"), capF = document.getElementById("cap-f");
+  var timeAcc = 0;
+  function frame(ts) {
+    if (last == null) last = ts;
+    var dt = Math.min(0.1, (ts - last) / 1000); last = ts;
+    if (playing) {
+      clock += dt; timeAcc += dt;
+      if (clock >= NS * DUR) { clock = NS * DUR - 0.001; setPlaying(false); }
+    }
+    readColors();
+    var k = Math.min(NS - 1, Math.floor(clock / DUR)), u = ease((clock - k * DUR) / ANIM);
+    if (k !== shownStep) {
+      shownStep = k;
+      capN.textContent = "Step " + (k + 1) + " of " + NS;
+      capH.textContent = STEPS[k].h; capP.textContent = STEPS[k].p; capF.textContent = STEPS[k].f;
+      Array.prototype.forEach.call(stepsEl.children, function (b, j) {
+        if (j === k) b.setAttribute("aria-current", "step"); else b.removeAttribute("aria-current");
+        b.classList.toggle("done", j < k);
+      });
+    }
+    var S = frameState(k, u);
+    var on = { 0: ["c", "a"], 1: ["lift", "h"], 2: ["A", "t"], 3: ["q", "y"], 4: ["t", "z"], 5: ["z", "count"], 6: ["c", "count"] }[k];
+    document.getElementById("q-z").classList.toggle("on", k === 4 || k === 5);
+    document.getElementById("q-h").classList.toggle("on", k === 0 || k === 1 || k === 2);
+    document.getElementById("q-n").classList.toggle("on", k === 5 || k === 6);
+    Array.prototype.forEach.call(document.querySelectorAll("#pipe .chip, #pipe2 .chip"), function (ch) { ch.classList.toggle("on", on.indexOf(ch.getAttribute("data-key")) >= 0); });
+    document.getElementById("q-A").classList.toggle("on", k === 2);
+    document.getElementById("q-q").classList.toggle("on", k === 3 || k === 0);
+    document.getElementById("q-c").classList.toggle("on", k === 0 || k === 6);
+    drawScene(S, timeAcc);
+    drawLedger(S);
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

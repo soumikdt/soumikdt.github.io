@@ -1,0 +1,532 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<style>body{margin:0}</style>
+</head>
+<body>
+<title>Forster Map Playground</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: two linked panels side by side (input plane | Forster image in 3D), readouts beneath; panels stack on phones */
+:root {
+  --bg: #F4F6F8;
+  --surface: #FFFFFF;
+  --ink: #1A2030;
+  --muted: #5B6476;
+  --line: #D4D9E2;
+  --accent: #0D6A72;
+  --accent-soft: #D3EAEA;
+  --hs: #A86C12;
+  --hs-soft: rgba(168, 108, 18, 0.15);
+  --neg: #8892A6;
+  --plane: rgba(13, 106, 114, 0.12);
+  --bad: #B23A3A;
+  --f-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+  --f-body: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #10141B; --surface: #171C26; --ink: #E5E8EE; --muted: #9AA3B4; --line: #2B3242;
+    --accent: #52B9C0; --accent-soft: #163A3E; --hs: #E1A84C; --hs-soft: rgba(225, 168, 76, 0.16);
+    --neg: #737D92; --plane: rgba(82, 185, 192, 0.13); --bad: #E07070; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #10141B; --surface: #171C26; --ink: #E5E8EE; --muted: #9AA3B4; --line: #2B3242;
+  --accent: #52B9C0; --accent-soft: #163A3E; --hs: #E1A84C; --hs-soft: rgba(225, 168, 76, 0.16);
+  --neg: #737D92; --plane: rgba(82, 185, 192, 0.13); --bad: #E07070; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 72rem; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 6px; max-width: 48rem; }
+.eyebrow { font-family: var(--f-mono); font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+h1 { font-family: var(--f-display); font-weight: 600; font-size: clamp(1.8rem, 4.2vw, 2.5rem); line-height: 1.12; margin: 0; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); }
+var { font-family: var(--f-display); font-style: italic; font-size: 1.07em; }
+
+.toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; }
+.seg { display: inline-flex; flex-wrap: wrap; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.seg button { font: inherit; font-size: 0.84rem; border: 0; border-right: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 7px 11px; cursor: pointer; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--accent); color: var(--surface); }
+.btn { font: inherit; font-size: 0.84rem; border: 1px solid var(--line); background: var(--surface); color: var(--ink); padding: 7px 11px; border-radius: 6px; cursor: pointer; }
+.btn[aria-pressed="true"] { background: var(--hs); border-color: var(--hs); color: var(--surface); }
+.btn:hover, .seg button:hover { border-color: var(--accent); }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lbl { font-size: 0.8rem; color: var(--muted); }
+
+.panels { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 820px) { .panels { grid-template-columns: 1fr; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; display: grid; gap: 8px; padding: 12px; min-width: 0; }
+.panel-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.panel-head h2 { font-family: var(--f-display); font-weight: 600; font-size: 1.2rem; margin: 0; }
+.hint { font-size: 0.8rem; color: var(--muted); }
+#plane2d { width: 100%; height: auto; aspect-ratio: 1 / 1; max-width: 100%; display: block; touch-action: none; cursor: crosshair; user-select: none; }
+#view3d { width: 100%; aspect-ratio: 1 / 1; max-width: 100%; display: block; touch-action: none; cursor: grab; }
+#view3d.dragging { cursor: grabbing; }
+svg text { font-family: var(--f-body); font-size: 11px; fill: var(--muted); }
+
+.controls { display: grid; gap: 4px; }
+.controls label { font-size: 0.82rem; color: var(--muted); display: flex; justify-content: space-between; gap: 10px; }
+input[type="range"] { width: 100%; accent-color: var(--hs); }
+.checkrow { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.84rem; }
+.checkrow label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+
+.readouts { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 12px 14px; display: grid; gap: 4px; min-width: 0; }
+.card .k { font-size: 0.78rem; color: var(--muted); }
+.card .v { font-family: var(--f-mono); font-size: 0.9rem; font-variant-numeric: tabular-nums; white-space: pre-wrap; overflow-wrap: anywhere; }
+.card .note { font-size: 0.78rem; color: var(--muted); }
+.ok { color: var(--accent); } .badc { color: var(--bad); }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.8rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+footer { font-size: 0.8rem; color: var(--muted); max-width: 52rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Forster decomposition · weighted mean · live</div>
+    <h1>Drag a point, watch its Forster image move</h1>
+    <p class="lede">Left: your points in the plane, the weighted mean <var>c</var>, and a halfspace whose edge passes through <var>c</var>. Right: each lifted point <var>v</var><sub>i</sub> = (<var>p</var><sub>i</sub>, 1) after the Forster map, <var>y</var><sub>i</sub> = <var>A</var><var>v</var><sub>i</sub>/<var>q</var><sub>i</sub>, inside the unit ball. Everything is recomputed on every move.</p>
+  </header>
+
+  <div class="toolbar">
+    <span class="lbl">Start from</span>
+    <div class="seg" role="group" aria-label="Preset point sets">
+      <button type="button" id="pre-strag" data-pre="strag" aria-pressed="true">Cluster + stragglers</button>
+      <button type="button" id="pre-cloud" data-pre="cloud" aria-pressed="false">Tilted cloud</button>
+      <button type="button" id="pre-line" data-pre="line" aria-pressed="false">Mostly on a line</button>
+      <button type="button" id="pre-rep" data-pre="rep" aria-pressed="false">Repeated point</button>
+    </div>
+    <button type="button" class="btn" id="remove" aria-pressed="false">Remove mode</button>
+    <button type="button" class="btn" id="resetview">Reset 3D view</button>
+  </div>
+
+  <div class="panels">
+    <section class="panel" aria-label="Input points in the plane">
+      <div class="panel-head"><h2>Input plane ℝ²</h2><span class="hint">Drag points · click empty space to add</span></div>
+      <svg id="plane2d" viewBox="0 0 400 400" role="img" aria-label="Draggable points, the weighted mean c and a halfspace through c"></svg>
+      <div class="controls">
+        <label for="theta"><span>Halfspace direction <var>a</var></span><span id="theta-val" class="lbl">worst</span></label>
+        <input type="range" id="theta" min="0" max="359" value="0" step="1">
+        <div class="checkrow">
+          <label><input type="checkbox" id="followworst" checked> Follow the worst direction for <var>c</var></label>
+          <label><input type="checkbox" id="showmean" checked> Show plain mean</label>
+        </div>
+      </div>
+    </section>
+    <section class="panel" aria-label="Forster images in three dimensions">
+      <div class="panel-head"><h2>Forster image <var>y</var><sub>i</sub> = <var>A</var><var>v</var><sub>i</sub>/<var>q</var><sub>i</sub></h2><span class="hint">Drag to rotate</span></div>
+      <canvas id="view3d" aria-label="Rotatable 3D view of the normalized Forster images, the unit ball, the plane with normal t and the mean of the y_i"></canvas>
+      <div class="checkrow">
+        <label><input type="checkbox" id="showplane" checked> Plane through the origin (normal <var>t</var>)</label>
+        <label><input type="checkbox" id="showrays" checked> Rays from origin</label>
+      </div>
+    </section>
+  </div>
+
+  <div class="legend">
+    <span><i class="sw" style="background:var(--hs)"></i>in the halfspace (<var>z</var><sub>i</sub> ≥ 0)</span>
+    <span><i class="sw" style="background:var(--neg)"></i>outside (<var>z</var><sub>i</sub> &lt; 0)</span>
+    <span><i class="sw" style="border:1.5px dashed var(--neg)"></i>not in <var>J</var> (outside the Forster subspace)</span>
+    <span><i class="sw" style="background:var(--ink)"></i><var>c</var> and the mean of the <var>y</var><sub>i</sub> ∝ <var>A</var>(<var>c</var>, 1)</span>
+  </div>
+
+  <div class="readouts">
+    <div class="card"><div class="k">Forster subspace <var>V</var></div><div class="v" id="r-V">–</div><div class="note">The decomposition keeps a crowded subspace when one exists.</div></div>
+    <div class="card"><div class="k">Map <var>A</var> on <var>V</var> (scaled)</div><div class="v" id="r-A">–</div><div class="note" id="r-conv">–</div></div>
+    <div class="card"><div class="k">Normalizers <var>q</var><sub>i</sub></div><div class="v" id="r-q">–</div><div class="note">Doubling loop: ‖<var>A</var><var>v</var><sub>i</sub>‖ ≤ <var>q</var><sub>i</sub> ≤ 2‖<var>A</var><var>v</var><sub>i</sub>‖. Dot size on the left is 1/<var>q</var><sub>i</sub>.</div></div>
+    <div class="card"><div class="k">Spread check <var>S</var> ⪰ <var>I</var>/(8<var>r</var>)</div><div class="v" id="r-S">–</div><div class="note">Eigenvalues of <var>S</var> = (1/<var>m</var>) Σ <var>y</var><sub>i</sub><var>y</var><sub>i</sub>ᵀ.</div></div>
+    <div class="card"><div class="k">This halfspace</div><div class="v" id="r-hs">–</div><div class="note">Σ<var>z</var><sub>i</sub> = 0 is the balance step.</div></div>
+    <div class="card"><div class="k">Depth of <var>c</var> (worst direction)</div><div class="v" id="r-depth">–</div><div class="note">Compared with the certified and sharper bounds.</div></div>
+  </div>
+
+  <footer>Coordinates are in arbitrary units. <var>A</var> comes from a plain Forster iteration on <var>V</var>, and the subspace is chosen by brute force as the densest proper subspace spanned by points when its density exceeds <var>n</var>/3. This stands in for the Diakonikolas–Tzamos–Kane routine. When points are nearly but not exactly collinear, the iteration can be slow, and the spread check reports what it actually finds.</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  /* ============ small linear algebra (sizes 1..3) ============ */
+  function zeros(r, c) { var M = []; for (var i = 0; i < r; i++) { M.push(new Array(c).fill(0)); } return M; }
+  function eye(r) { var M = zeros(r, r); for (var i = 0; i < r; i++) M[i][i] = 1; return M; }
+  function mm(A, B) { var r = A.length, k = B.length, c = B[0].length, C = zeros(r, c);
+    for (var i = 0; i < r; i++) for (var j = 0; j < c; j++) { var s = 0; for (var t = 0; t < k; t++) s += A[i][t] * B[t][j]; C[i][j] = s; } return C; }
+  function mv(A, x) { return A.map(function (row) { var s = 0; for (var i = 0; i < x.length; i++) s += row[i] * x[i]; return s; }); }
+  function tr(A) { return A[0].map(function (_, j) { return A.map(function (r) { return r[j]; }); }); }
+  function dot(a, b) { var s = 0; for (var i = 0; i < a.length; i++) s += a[i] * b[i]; return s; }
+  function nrm(a) { return Math.sqrt(dot(a, a)); }
+  function jacobi(M) {
+    var n = M.length, a = M.map(function (r) { return r.slice(); }), v = eye(n);
+    for (var sweep = 0; sweep < 80; sweep++) {
+      var off = 0; for (var p = 0; p < n; p++) for (var q = p + 1; q < n; q++) off += a[p][q] * a[p][q];
+      if (off < 1e-26) break;
+      for (p = 0; p < n; p++) for (q = p + 1; q < n; q++) {
+        if (Math.abs(a[p][q]) < 1e-300) continue;
+        var th = (a[q][q] - a[p][p]) / (2 * a[p][q]);
+        var t = (th >= 0 ? 1 : -1) / (Math.abs(th) + Math.sqrt(th * th + 1)), c = 1 / Math.sqrt(t * t + 1), s = t * c, k, x, y;
+        for (k = 0; k < n; k++) { x = a[k][p]; y = a[k][q]; a[k][p] = c * x - s * y; a[k][q] = s * x + c * y; }
+        for (k = 0; k < n; k++) { x = a[p][k]; y = a[q][k]; a[p][k] = c * x - s * y; a[q][k] = s * x + c * y; }
+        for (k = 0; k < n; k++) { x = v[k][p]; y = v[k][q]; v[k][p] = c * x - s * y; v[k][q] = s * x + c * y; }
+      }
+    }
+    return { vals: a.map(function (r, i) { return r[i]; }), vecs: v };
+  }
+  function symPow(M, pw) {
+    var E = jacobi(M), n = M.length, D = zeros(n, n);
+    for (var i = 0; i < n; i++) D[i][i] = Math.pow(Math.max(E.vals[i], 1e-300), pw);
+    return mm(mm(E.vecs, D), tr(E.vecs));
+  }
+  function inv(M) {
+    var n = M.length, A = M.map(function (r, i) { return r.concat(eye(n)[i]); });
+    for (var c = 0; c < n; c++) {
+      var p = c; for (var i = c + 1; i < n; i++) if (Math.abs(A[i][c]) > Math.abs(A[p][c])) p = i;
+      var tmp = A[c]; A[c] = A[p]; A[p] = tmp;
+      var piv = A[c][c]; if (Math.abs(piv) < 1e-300) return null;
+      for (var j = 0; j < 2 * n; j++) A[c][j] /= piv;
+      for (i = 0; i < n; i++) if (i !== c) { var f = A[i][c]; for (j = 0; j < 2 * n; j++) A[i][j] -= f * A[c][j]; }
+    }
+    return A.map(function (r) { return r.slice(n); });
+  }
+
+  /* ============ data and presets ============ */
+  function mulberry(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function gauss(r) { var u = 0; while (u === 0) u = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * r()); }
+  function preset(kind) {
+    var r = mulberry(7), P = [], i;
+    if (kind === "cloud") {
+      for (i = 0; i < 18; i++) { var x = 0.55 * gauss(r), y = 0.2 * gauss(r); P.push([x * 0.85 - y * 0.53, x * 0.53 + y * 0.85]); }
+    } else if (kind === "line") {
+      for (i = 0; i < 12; i++) { var s = -1.1 + 2.2 * r(); P.push([s, 0.4 * s - 0.2]); }
+      P.push([-0.6, 0.8], [0.5, -0.9], [0.9, 0.7]);
+    } else if (kind === "rep") {
+      for (i = 0; i < 9; i++) P.push([0.3, -0.2]);
+      for (i = 0; i < 7; i++) P.push([1.1 * (2 * r() - 1), 1.1 * (2 * r() - 1)]);
+    } else {
+      for (i = 0; i < 14; i++) P.push([-0.45 + 0.17 * gauss(r), 0.1 + 0.17 * gauss(r)]);
+      for (i = 0; i < 5; i++) P.push([0.5 + 0.8 * r(), -1.1 + 0.9 * r()]);
+    }
+    return P.map(function (p) { return [Math.max(-1.4, Math.min(1.4, p[0])), Math.max(-1.4, Math.min(1.4, p[1]))]; });
+  }
+
+  /* ============ Forster decomposition (brute force for d = 2) ============ */
+  var TOL = 1e-9;
+  function samePt(a, b) { return Math.abs(a[0] - b[0]) < TOL && Math.abs(a[1] - b[1]) < TOL; }
+  function collinear(a, b, p) { return Math.abs((b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])) < TOL * (1 + Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1])); }
+  function chooseSubspace(P) {
+    var n = P.length, best = { r: 3, members: P.map(function (_, i) { return i; }), dens: n / 3, basisIdx: null };
+    // dimension 1: identical points (their lifts are parallel)
+    function scan1(idxs) {
+      var out = null;
+      idxs.forEach(function (i) {
+        var mem = idxs.filter(function (j) { return samePt(P[i], P[j]); });
+        if (!out || mem.length > out.members.length) out = { r: 1, members: mem, dens: mem.length, basisIdx: [i] };
+      });
+      return out;
+    }
+    var line = null;
+    for (var i = 0; i < n; i++) for (var j = i + 1; j < n; j++) {
+      if (samePt(P[i], P[j])) continue;
+      var mem = []; for (var k = 0; k < n; k++) if (collinear(P[i], P[j], P[k])) mem.push(k);
+      if (!line || mem.length > line.members.length) line = { r: 2, members: mem, dens: mem.length / 2, basisIdx: [i, j] };
+    }
+    var pt = scan1(P.map(function (_, i) { return i; }));
+    var cands = [pt, line].filter(Boolean).filter(function (c) { return c.dens > n / 3 + 1e-12; });
+    if (cands.length) {
+      cands.sort(function (a, b) { return b.dens - a.dens || a.r - b.r; });
+      best = cands[0];
+      if (best.r === 2) {   // recurse inside the line: a repeated point holding more than half of it
+        var inner = scan1(best.members);
+        if (inner && inner.members.length > best.members.length / 2 + 1e-12) best = inner;
+      }
+    }
+    var B;
+    if (best.r === 3) B = eye(3);
+    else B = tr(best.basisIdx.map(function (i) { return [P[i][0], P[i][1], 1]; }));   // 3 x r
+    return { r: best.r, J: best.members, B: B };
+  }
+  function coordsIn(B, v) {   // least squares coordinates of v in span(B)
+    var Bt = tr(B), G = mm(Bt, B), Gi = inv(G);
+    return mv(Gi, mv(Bt, v));
+  }
+  function forster(Z) {
+    var m = Z.length, r = Z[0].length, A = eye(r), it, conv = false, dev = 0;
+    if (r === 1) return { A: [[1]], it: 0, conv: true, dev: 0 };
+    for (it = 0; it < 3000; it++) {
+      var M = zeros(r, r);
+      Z.forEach(function (z) { var w = mv(A, z), s = nrm(w); for (var a = 0; a < r; a++) for (var b = 0; b < r; b++) M[a][b] += r * w[a] * w[b] / (s * s * m); });
+      var ev = jacobi(M).vals; dev = Math.max.apply(null, ev.map(function (x) { return Math.abs(x - 1); }));
+      if (dev < 1e-6) { conv = true; break; }
+      A = mm(symPow(M, -0.5), A);
+      var f = Math.sqrt(A.reduce(function (s, row) { return s + dot(row, row); }, 0)); A = A.map(function (row) { return row.map(function (x) { return x / f; }); });
+    }
+    A = symPow(mm(tr(A), A), 0.5);   // symmetric polar factor: same norms and spectrum
+    return { A: A, it: it, conv: conv, dev: dev };
+  }
+
+  /* ============ full pipeline ============ */
+  function compute(P) {
+    var n = P.length, dec = chooseSubspace(P), r = dec.r, J = dec.J, m = J.length;
+    var V = P.map(function (p) { return [p[0], p[1], 1]; });
+    var Z = J.map(function (i) { return coordsIn(dec.B, V[i]); });
+    var F = forster(Z), A = F.A;
+    var W = Z.map(function (z) { return mv(A, z); });
+    var q = W.map(function (w) { var qq = Math.max.apply(null, w.map(Math.abs)), s = dot(w, w); while (qq * qq < s) qq *= 2; return qq; });
+    var Y = W.map(function (w, k) { return w.map(function (x) { return x / q[k]; }); });
+    var S = zeros(r, r); Y.forEach(function (y) { for (var a = 0; a < r; a++) for (var b = 0; b < r; b++) S[a][b] += y[a] * y[b] / m; });
+    var lam = jacobi(S).vals.slice().sort(function (a, b) { return a - b; });
+    var Wsum = 0, c = [0, 0];
+    J.forEach(function (i, k) { Wsum += 1 / q[k]; c[0] += P[i][0] / q[k]; c[1] += P[i][1] / q[k]; });
+    c = [c[0] / Wsum, c[1] / Wsum];
+    var mean = [0, 0]; P.forEach(function (p) { mean[0] += p[0] / n; mean[1] += p[1] / n; });
+    var ybar = zeros(1, r)[0]; Y.forEach(function (y) { for (var a = 0; a < r; a++) ybar[a] += y[a] / m; });
+    var AinvT = tr(inv(A));
+    return { n: n, r: r, J: J, inJ: P.map(function (_, i) { return J.indexOf(i) >= 0; }), B: dec.B, A: A, F: F, q: q, Y: Y, S: S, lam: lam, c: c, mean: mean, ybar: ybar, AinvT: AinvT };
+  }
+  function countAt(P, c, th) {
+    var a = [Math.cos(th), Math.sin(th)], k = 0;
+    P.forEach(function (p) { if (a[0] * (p[0] - c[0]) + a[1] * (p[1] - c[1]) >= -1e-12) k++; });
+    return k;
+  }
+  function depthOf(P, c) {
+    var crit = [];
+    P.forEach(function (p) { var dx = p[0] - c[0], dy = p[1] - c[1]; if (dx * dx + dy * dy < 1e-24) return; var ph = Math.atan2(dy, dx); crit.push(ph + Math.PI / 2, ph - Math.PI / 2); });
+    if (!crit.length) return { depth: P.length, th: 0 };
+    crit = crit.map(function (x) { x %= 2 * Math.PI; return x < 0 ? x + 2 * Math.PI : x; }).sort(function (a, b) { return a - b; });
+    var best = P.length + 1, bth = 0;
+    for (var i = 0; i < crit.length; i++) {
+      var a0 = crit[i], a1 = i + 1 < crit.length ? crit[i + 1] : crit[0] + 2 * Math.PI;
+      if (a1 - a0 < 1e-12) continue;
+      var k = countAt(P, c, (a0 + a1) / 2); if (k < best) { best = k; bth = (a0 + a1) / 2; }
+    }
+    return { depth: best, th: bth };
+  }
+
+  /* ============ state ============ */
+  var P = preset("strag"), R = null, hover = -1, removeMode = false;
+  var view = { yaw: -0.6, pitch: 0.45 };
+  var colors = {};
+  function readColors() { var cs = getComputedStyle(document.documentElement); ["ink", "muted", "line", "accent", "accent-soft", "hs", "hs-soft", "neg", "plane", "surface", "bad"].forEach(function (k) { colors[k] = cs.getPropertyValue("--" + k).trim(); }); }
+
+  /* ============ left panel (SVG) ============ */
+  var svg = document.getElementById("plane2d"), NS = "http://www.w3.org/2000/svg";
+  var SZ = 400, SC = SZ / 3.2;
+  function X(x) { return SZ / 2 + SC * x; } function Yp(y) { return SZ / 2 - SC * y; }
+  function invX(px) { return (px - SZ / 2) / SC; } function invY(py) { return (SZ / 2 - py) / SC; }
+  function el(tag, at, parent, txt) { var e = document.createElementNS(NS, tag); for (var k in at) e.setAttribute(k, at[k]); if (txt != null) e.textContent = txt; if (parent) parent.appendChild(e); return e; }
+
+  function currentTheta(dep) {
+    if (document.getElementById("followworst").checked) return dep.th;
+    return +document.getElementById("theta").value * Math.PI / 180;
+  }
+
+  function drawLeft(st) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var c = R.c, a = [Math.cos(st.th), Math.sin(st.th)], u = [-a[1], a[0]], L = 6;
+    // grid
+    for (var g = -1; g <= 1; g += 0.5) {
+      el("line", { x1: X(g), y1: 0, x2: X(g), y2: SZ, stroke: colors.line, "stroke-width": g === 0 ? 1 : 0.5 }, svg);
+      el("line", { x1: 0, y1: Yp(g), x2: SZ, y2: Yp(g), stroke: colors.line, "stroke-width": g === 0 ? 1 : 0.5 }, svg);
+    }
+    var poly = [[c[0] + L * u[0], c[1] + L * u[1]], [c[0] + L * u[0] + 2 * L * a[0], c[1] + L * u[1] + 2 * L * a[1]], [c[0] - L * u[0] + 2 * L * a[0], c[1] - L * u[1] + 2 * L * a[1]], [c[0] - L * u[0], c[1] - L * u[1]]];
+    el("polygon", { points: poly.map(function (p) { return X(p[0]) + "," + Yp(p[1]); }).join(" "), fill: colors["hs-soft"] }, svg);
+    el("line", { x1: X(c[0] - L * u[0]), y1: Yp(c[1] - L * u[1]), x2: X(c[0] + L * u[0]), y2: Yp(c[1] + L * u[1]), stroke: colors.hs, "stroke-width": 1.8 }, svg);
+    el("line", { x1: X(c[0]), y1: Yp(c[1]), x2: X(c[0] + 0.32 * a[0]), y2: Yp(c[1] + 0.32 * a[1]), stroke: colors.hs, "stroke-width": 2.4 }, svg);
+    el("text", { x: X(c[0] + 0.38 * a[0]) - 4, y: Yp(c[1] + 0.38 * a[1]) + 4, style: "font-family:var(--f-display);font-style:italic;font-size:15px;fill:" + colors.hs }, svg, "a");
+    if (document.getElementById("showmean").checked) {
+      el("circle", { cx: X(R.mean[0]), cy: Yp(R.mean[1]), r: 7, fill: "none", stroke: colors.neg, "stroke-width": 2, "stroke-dasharray": "3 2" }, svg);
+      el("text", { x: X(R.mean[0]) + 9, y: Yp(R.mean[1]) + 14 }, svg, "plain mean");
+    }
+    var qmin = Infinity; R.q.forEach(function (x) { qmin = Math.min(qmin, x); });
+    P.forEach(function (p, i) {
+      var inside = a[0] * (p[0] - c[0]) + a[1] * (p[1] - c[1]) >= -1e-12;
+      var k = R.J.indexOf(i), rad = k >= 0 ? 3 + 5 * Math.sqrt(qmin / R.q[k]) : 5;
+      var g = el("g", { "data-i": i, style: "cursor:" + (removeMode ? "not-allowed" : "grab") }, svg);
+      el("circle", { cx: X(p[0]), cy: Yp(p[1]), r: 14, fill: "transparent" }, g);   // touch target
+      if (k >= 0) el("circle", { cx: X(p[0]), cy: Yp(p[1]), r: rad, fill: inside ? colors.hs : colors.neg, stroke: i === hover ? colors.ink : "none", "stroke-width": 2 }, g);
+      else el("circle", { cx: X(p[0]), cy: Yp(p[1]), r: 5, fill: colors.surface, stroke: inside ? colors.hs : colors.neg, "stroke-width": 1.5, "stroke-dasharray": "2 2" }, g);
+    });
+    var cs = 9; var cx = X(c[0]), cy = Yp(c[1]);
+    el("circle", { cx: cx, cy: cy, r: 15, fill: "none", stroke: colors.ink, "stroke-width": 1.2, "stroke-dasharray": "3 3" }, svg);
+    el("path", { d: "M" + (cx - cs) + " " + (cy - cs) + "L" + (cx + cs) + " " + (cy + cs) + "M" + (cx - cs) + " " + (cy + cs) + "L" + (cx + cs) + " " + (cy - cs), stroke: colors.surface, "stroke-width": 5 }, svg);
+    el("path", { d: "M" + (cx - cs) + " " + (cy - cs) + "L" + (cx + cs) + " " + (cy + cs) + "M" + (cx - cs) + " " + (cy + cs) + "L" + (cx + cs) + " " + (cy - cs), stroke: colors.ink, "stroke-width": 2.4 }, svg);
+    var lx = 14, ly = 26;
+    el("line", { x1: lx + 70, y1: ly + 21, x2: cx, y2: cy, stroke: colors.ink, "stroke-width": 1, "stroke-dasharray": "2 3", opacity: 0.7 }, svg);
+    el("rect", { x: lx - 4, y: ly - 15, width: 146, height: 36, rx: 4, fill: colors.surface, stroke: colors.ink, "stroke-width": 1, opacity: 0.92 }, svg);
+    el("text", { x: lx + 2, y: ly, style: "font-family:var(--f-display);font-style:italic;font-size:15px;fill:" + colors.ink }, svg, "c = (" + c[0].toFixed(2) + ", " + c[1].toFixed(2) + ")");
+    el("text", { x: lx + 2, y: ly + 15, style: "font-size:10.5px;fill:" + colors.muted }, svg, "Σ pᵢ/qᵢ ÷ Σ 1/qᵢ  (i ∈ J)");
+    el("text", { x: 8, y: SZ - 8 }, svg, "dot size = weight 1/qᵢ");
+  }
+
+  /* ============ right panel (canvas 3D) ============ */
+  var cv = document.getElementById("view3d"), ctx = cv.getContext("2d");
+  function embed(y) { return [y[0] || 0, y[1] || 0, y[2] || 0]; }
+  function drawRight(st) {
+    var dpr = window.devicePixelRatio || 1, w = cv.clientWidth, h = cv.clientHeight || w;
+    if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(h * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, w, h);
+    var S3 = Math.min(w, h) / 2.9, cx0 = w / 2, cy0 = h / 2;
+    var cyw = Math.cos(view.yaw), syw = Math.sin(view.yaw), cp = Math.cos(view.pitch), sp = Math.sin(view.pitch);
+    function proj(p) {
+      var x = p[0] * cyw - p[1] * syw, y = p[0] * syw + p[1] * cyw, z = p[2];
+      var y2 = y * cp - z * sp, z2 = y * sp + z * cp;
+      return { x: cx0 + S3 * x, y: cy0 - S3 * z2, d: -y2 };
+    }
+    function seg(a, b, col, lw, alpha, dash) { var A = proj(a), B = proj(b); ctx.globalAlpha = alpha == null ? 1 : alpha; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.setLineDash(dash || []); ctx.beginPath(); ctx.moveTo(A.x, A.y); ctx.lineTo(B.x, B.y); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; }
+    function label(p, t, col, dx, dy, font) { var s = proj(p); ctx.fillStyle = col; ctx.font = font || "12px 'IBM Plex Sans', system-ui, sans-serif"; ctx.fillText(t, s.x + (dx || 0), s.y + (dy || 0)); }
+    // unit sphere: three great circles
+    [[0, 1], [0, 2], [1, 2]].forEach(function (ax) {
+      ctx.strokeStyle = colors.line; ctx.lineWidth = 1; ctx.beginPath();
+      for (var k = 0; k <= 72; k++) { var t = k / 72 * 2 * Math.PI, p = [0, 0, 0]; p[ax[0]] = Math.cos(t); p[ax[1]] = Math.sin(t); var s = proj(p); if (k) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y); }
+      ctx.stroke();
+    });
+    // axes
+    ["y₁", "y₂", "y₃"].forEach(function (nm, k) { if (k >= R.r) return; var e = [0, 0, 0]; e[k] = 1.15; seg([0, 0, 0], e, colors.muted, 1, 0.6, [3, 3]); label(e, nm, colors.muted, 4, 4); });
+    // plane through origin with normal t (in r-space)
+    var that = st.that3;
+    if (document.getElementById("showplane").checked && that && R.r >= 2) {
+      var n3 = that, up = Math.abs(n3[2]) < 0.9 ? [0, 0, 1] : [1, 0, 0];
+      var b1 = [n3[1] * up[2] - n3[2] * up[1], n3[2] * up[0] - n3[0] * up[2], n3[0] * up[1] - n3[1] * up[0]], bl = nrm(b1); b1 = b1.map(function (x) { return x / bl; });
+      var b2 = [n3[1] * b1[2] - n3[2] * b1[1], n3[2] * b1[0] - n3[0] * b1[2], n3[0] * b1[1] - n3[1] * b1[0]];
+      var Rr = 1.2, corners = [[1, 1], [-1, 1], [-1, -1], [1, -1]].map(function (s) { return [0, 1, 2].map(function (k) { return Rr * (s[0] * b1[k] + s[1] * b2[k]); }); });
+      if (R.r === 2) corners = [[1.2, 0, 0], [-1.2, 0, 0]].map(function () { return null; });
+      if (R.r === 3) {
+        ctx.beginPath(); corners.forEach(function (p, k) { var s = proj(p); if (k) ctx.lineTo(s.x, s.y); else ctx.moveTo(s.x, s.y); }); ctx.closePath();
+        ctx.fillStyle = colors.plane; ctx.fill(); ctx.strokeStyle = colors.accent; ctx.lineWidth = 1; ctx.stroke();
+      }
+    }
+    if (that && R.r >= 2) {
+      if (R.r === 2) {   // in a 2D subspace the "plane" is the line perpendicular to t
+        var pr = [-that[1], that[0], 0];
+        seg(pr.map(function (x) { return -1.2 * x; }), pr.map(function (x) { return 1.2 * x; }), colors.accent, 1.5, 0.9);
+      }
+      seg([0, 0, 0], that.map(function (x) { return 1.1 * x; }), colors.hs, 2.2, 1);
+      label(that.map(function (x) { return 1.16 * x; }), "t̂", colors.hs, 2, 4, "italic 15px 'Newsreader', Georgia, serif");
+    }
+    // rays and points sorted by depth
+    var pts = R.Y.map(function (y, k) { return { k: k, i: R.J[k], p: embed(y) }; });
+    var order = pts.map(function (o) { o.s = proj(o.p); return o; }).sort(function (a, b) { return a.s.d - b.s.d; });
+    if (document.getElementById("showrays").checked) order.forEach(function (o) { seg([0, 0, 0], o.p, colors.accent, 0.8, 0.3); });
+    order.forEach(function (o) {
+      var col = st.z[o.k] >= -1e-12 ? colors.hs : colors.neg, rad = 4.5 + 1.2 * Math.max(-1, Math.min(1, o.s.d));
+      ctx.fillStyle = col; ctx.beginPath(); ctx.arc(o.s.x, o.s.y, rad, 0, 7); ctx.fill();
+      if (o.i === hover) { ctx.strokeStyle = colors.ink; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(o.s.x, o.s.y, rad + 4, 0, 7); ctx.stroke(); label(o.p, "y" + sub(o.i + 1) + "  (q = " + R.q[o.k].toFixed(2) + ")", colors.ink, rad + 6, 4); }
+    });
+    // mean of y  (∝ A(c,1))
+    var yb = embed(R.ybar);
+    seg([0, 0, 0], yb, colors.ink, 2.6, 1);
+    var ys = proj(yb); ctx.fillStyle = colors.ink; ctx.beginPath(); ctx.arc(ys.x, ys.y, 3.5, 0, 7); ctx.fill();
+    label(yb, "mean of yᵢ", colors.ink, 8, -6);
+    var ycn = nrm(yb);
+    if (ycn > 1e-12) {
+      var cImg = yb.map(function (x) { return x / ycn; });
+      seg(yb, cImg, colors.ink, 1.2, 0.8, [3, 3]);
+      var cS = proj(cImg), k2 = 7;
+      ctx.strokeStyle = colors.surface; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(cS.x - k2, cS.y - k2); ctx.lineTo(cS.x + k2, cS.y + k2); ctx.moveTo(cS.x - k2, cS.y + k2); ctx.lineTo(cS.x + k2, cS.y - k2); ctx.stroke();
+      ctx.strokeStyle = colors.ink; ctx.lineWidth = 2.4; ctx.stroke();
+      label(cImg, "image of c: A(c,1)/‖A(c,1)‖", colors.ink, 10, 14, "italic 14px 'Newsreader', Georgia, serif");
+    }
+    var o = proj([0, 0, 0]); ctx.fillStyle = colors.ink; ctx.beginPath(); ctx.arc(o.x, o.y, 2.5, 0, 7); ctx.fill();
+    ctx.fillStyle = colors.muted; ctx.font = "12px 'IBM Plex Sans', system-ui, sans-serif";
+    ctx.fillText(R.r === 3 ? "V = ℝ³ (r = 3), unit ball" : "V has dimension r = " + R.r + "; shown in its own coordinates", 10, h - 10);
+  }
+  function sub(n) { return String(n).split("").map(function (d) { return "₀₁₂₃₄₅₆₇₈₉"[+d]; }).join(""); }
+
+  /* ============ readouts ============ */
+  function fmtM(M) { var s = 0; M.forEach(function (r) { r.forEach(function (x) { s = Math.max(s, Math.abs(x)); }); }); return M.map(function (r) { return "[" + r.map(function (x) { var v = (x / s).toFixed(2); return (v[0] === "-" ? "" : " ") + v; }).join(" ") + " ]"; }).join("\n"); }
+  function readouts(st) {
+    var n = R.n, r = R.r, m = R.J.length, gamma = 1 / (8 * r);
+    var vtxt = r === 3 ? "all of ℝ³   (r = 3)" : r === 2 ? "a plane through the origin\n(the lift of a line in ℝ²)   r = 2" : "a line through the origin\n(the lift of a repeated point)   r = 1";
+    document.getElementById("r-V").textContent = vtxt + "\nm = " + m + " of n = " + n + "   (need m·3 ≥ n·r: " + (m * 3 >= n * r ? "yes" : "no") + ")";
+    document.getElementById("r-A").textContent = fmtM(R.A);
+    document.getElementById("r-conv").textContent = R.F.conv ? "Forster iteration converged in " + R.F.it + " steps." : "Not fully converged after " + R.F.it + " steps (largest deviation " + R.F.dev.toFixed(3) + "). Points are nearly, but not exactly, degenerate.";
+    var qs = R.q.slice().sort(function (a, b) { return a - b; });
+    document.getElementById("r-q").textContent = "min " + qs[0].toFixed(3) + "   max " + qs[qs.length - 1].toFixed(3) + "\nratio " + (qs[qs.length - 1] / qs[0]).toFixed(1) + "×";
+    var pass = R.lam[0] >= gamma - 1e-12;
+    var sEl = document.getElementById("r-S");
+    sEl.textContent = "λ = " + R.lam.map(function (x) { return x.toFixed(3); }).join(", ") + "\nthreshold 1/(8r) = " + gamma.toFixed(3) + "   " + (pass ? "passes" : "fails");
+    sEl.className = "v " + (pass ? "ok" : "badc");
+    var cnt = countAt(P, R.c, st.th);
+    document.getElementById("r-hs").textContent = "points inside: " + cnt + " of " + n + "\nΣzᵢ = " + (Math.abs(st.sumz) < 5e-10 ? "0.000" : st.sumz.toFixed(3)) + "   Σzᵢ² = " + st.sumsq.toFixed(2) + "\n#{zᵢ > 0} = " + st.npos + " of m = " + m;
+    document.getElementById("r-depth").textContent = "depth(c) = " + st.dep.depth + "\ncertified m/(16r) = " + (m / (16 * r)).toFixed(2) + "   (≥ n/48 = " + (n / 48).toFixed(2) + ")\nsharper m·λmin/2 = " + (m * R.lam[0] / 2).toFixed(2) + "\nbest possible n/3 = " + (n / 3).toFixed(2);
+    document.getElementById("theta-val").textContent = document.getElementById("followworst").checked ? "worst: " + Math.round(((st.th * 180 / Math.PI) % 360 + 360) % 360) + "°" : document.getElementById("theta").value + "°";
+  }
+
+  /* ============ render ============ */
+  function render() {
+    readColors();
+    R = compute(P);
+    var dep = depthOf(P, R.c), th = currentTheta(dep);
+    if (document.getElementById("followworst").checked) document.getElementById("theta").value = Math.round(((th * 180 / Math.PI) % 360 + 360) % 360) % 360;
+    var a = [Math.cos(th), Math.sin(th)], h = [a[0], a[1], -(a[0] * R.c[0] + a[1] * R.c[1])];
+    var hV = mv(tr(R.B), h), t = mv(R.AinvT, hV), tn = nrm(t);
+    var that = tn > 1e-14 ? t.map(function (x) { return x / tn; }) : null;
+    var z = R.Y.map(function (y) { return that ? dot(that, y) : 0; });
+    var sumz = z.reduce(function (s, x) { return s + x; }, 0), sumsq = z.reduce(function (s, x) { return s + x * x; }, 0), npos = z.filter(function (x) { return x > 1e-12; }).length;
+    var st = { th: th, dep: dep, z: z, that3: that ? embed(that) : null, sumz: sumz, sumsq: sumsq, npos: npos };
+    drawLeft(st); drawRight(st); readouts(st);
+  }
+
+  /* ============ interaction: left ============ */
+  var drag = -1;
+  function svgPt(ev) { var r = svg.getBoundingClientRect(); return [(ev.clientX - r.left) / r.width * SZ, (ev.clientY - r.top) / r.height * SZ]; }
+  function clamp(v) { return Math.max(-1.55, Math.min(1.55, v)); }
+  svg.addEventListener("pointerdown", function (ev) {
+    var g = ev.target.closest && ev.target.closest("g[data-i]");
+    if (g) {
+      var i = +g.getAttribute("data-i");
+      if (removeMode) { if (P.length > 4) { P.splice(i, 1); hover = -1; render(); } return; }
+      drag = i; svg.setPointerCapture(ev.pointerId); ev.preventDefault();
+    } else if (!removeMode) {
+      var s = svgPt(ev); P.push([clamp(invX(s[0])), clamp(invY(s[1]))]); render();
+    }
+  });
+  svg.addEventListener("pointermove", function (ev) {
+    if (drag >= 0) { var s = svgPt(ev); P[drag] = [clamp(invX(s[0])), clamp(invY(s[1]))]; hover = drag; render(); return; }
+    var g = ev.target.closest && ev.target.closest("g[data-i]"), hv = g ? +g.getAttribute("data-i") : -1;
+    if (hv !== hover) { hover = hv; render(); }
+  });
+  function endDrag() { drag = -1; }
+  svg.addEventListener("pointerup", endDrag); svg.addEventListener("pointercancel", endDrag);
+  svg.addEventListener("pointerleave", function () { if (drag < 0 && hover !== -1) { hover = -1; render(); } });
+
+  /* ============ interaction: right (rotate) ============ */
+  var rot = null;
+  cv.addEventListener("pointerdown", function (ev) { rot = { x: ev.clientX, y: ev.clientY, yaw: view.yaw, pitch: view.pitch }; cv.setPointerCapture(ev.pointerId); cv.classList.add("dragging"); });
+  cv.addEventListener("pointermove", function (ev) { if (!rot) return; view.yaw = rot.yaw + (ev.clientX - rot.x) * 0.01; view.pitch = Math.max(-1.5, Math.min(1.5, rot.pitch + (ev.clientY - rot.y) * 0.01)); render(); });
+  function endRot() { rot = null; cv.classList.remove("dragging"); }
+  cv.addEventListener("pointerup", endRot); cv.addEventListener("pointercancel", endRot);
+
+  /* ============ controls ============ */
+  document.querySelectorAll("[data-pre]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      P = preset(b.getAttribute("data-pre"));
+      document.querySelectorAll("[data-pre]").forEach(function (x) { x.setAttribute("aria-pressed", String(x === b)); });
+      render();
+    });
+  });
+  document.getElementById("remove").addEventListener("click", function () { removeMode = !removeMode; this.setAttribute("aria-pressed", String(removeMode)); this.textContent = removeMode ? "Remove mode: tap a point" : "Remove mode"; render(); });
+  document.getElementById("resetview").addEventListener("click", function () { view.yaw = -0.6; view.pitch = 0.45; render(); });
+  document.getElementById("theta").addEventListener("input", function () { document.getElementById("followworst").checked = false; render(); });
+  ["followworst", "showmean", "showplane", "showrays"].forEach(function (id) { document.getElementById(id).addEventListener("change", render); });
+  window.addEventListener("resize", render);
+  if (window.matchMedia) { var mq = window.matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", render); }
+  render();
+})();
+</script>
+</body>
+</html>
