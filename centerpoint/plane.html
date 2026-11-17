@@ -94,7 +94,7 @@ footer { font-size: 0.8rem; color: var(--muted); max-width: 52rem; }
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">The Forster transform on its own · no lift · exact unit vectors</div>
+    <div class="eyebrow">The Forster transform · radial isotropic position · interactive</div>
     <h1>Forster in the plane</h1>
     <p class="lede">Each point <var>x</var><sub>i</sub> is treated as a vector from the origin. The Forster iteration looks for a 2 × 2 matrix <var>A</var> that makes the unit directions <var>u</var><sub>i</sub> = <var>A</var><var>x</var><sub>i</sub>/‖<var>A</var><var>x</var><sub>i</sub>‖ evenly spread: (1/<var>n</var>) Σ <var>u</var><sub>i</sub><var>u</var><sub>i</sub>ᵀ = <var>I</var>/2. Step through it, drag points, and watch what it does and does not give you.</p>
   </header>
@@ -137,25 +137,24 @@ footer { font-size: 0.8rem; color: var(--muted); max-width: 52rem; }
   </div>
 
   <div class="readouts">
-    <div class="card"><div class="k">Spread: eigenvalues of 2 · (1/<var>n</var>) Σ <var>u</var><sub>i</sub><var>u</var><sub>i</sub>ᵀ</div><div class="v" id="r-eig">–</div><div class="note">Radial isotropic position means both equal 1. The note needs at least ½.</div></div>
-    <div class="card"><div class="k">Balance: mean direction (1/<var>n</var>) Σ <var>u</var><sub>i</sub></div><div class="v" id="r-mean">–</div><div class="note">Forster does not make this zero. In the note, the lift plus the weighted mean <var>c</var> does.</div></div>
+    <div class="card"><div class="k">Spread: eigenvalues of 2 · (1/<var>n</var>) Σ <var>u</var><sub>i</sub><var>u</var><sub>i</sub>ᵀ</div><div class="v" id="r-eig">–</div><div class="note">Radial isotropic position means both equal 1.</div></div>
+    <div class="card"><div class="k">Balance: mean direction (1/<var>n</var>) Σ <var>u</var><sub>i</sub></div><div class="v" id="r-mean">–</div><div class="note">Forster does not make this zero: isotropy only controls second moments.</div></div>
     <div class="card"><div class="k">Matrix <var>A</var> (scaled)</div><div class="v" id="r-A">–</div><div class="note" id="r-exist">–</div></div>
     <div class="card"><div class="k">Halfspace through the origin</div><div class="v" id="r-hs">–</div><div class="note">The same points are inside before and after <var>A</var>: signs are preserved.</div></div>
   </div>
 
   <div class="lesson">
-    <h3>What this shows, and why the note adds the lift and the weights</h3>
+    <h3>What this shows</h3>
     <ul>
-      <li><b>Forster spreads directions.</b> Run it on the narrow cone: the directions fan out and both eigenvalues reach 1. This is the spread premise, S ⪰ γI.</li>
+      <li><b>Forster spreads directions.</b> Run it on the narrow cone: the directions fan out and both eigenvalues reach 1.</li>
       <li><b>It keeps every sign.</b> <var>A</var> is linear, so lines through the origin stay lines through the origin. The count in the halfspace is identical on both panels.</li>
       <li><b>Even is not uniform.</b> Isotropy, (1/<var>n</var>) Σ <var>u</var><sub>i</sub><var>u</var><sub>i</sub>ᵀ = <var>I</var>/2, means the <i>doubled</i> angles 2φ<sub>i</sub> balance (the inset's centroid reaches 0). The directions themselves can still sit in a fan over half the circle.</li>
       <li><b>It ignores ±.</b> <var>u</var> and −<var>u</var> add the same <var>u</var><var>u</var>ᵀ, so isotropy says nothing about balance. The mean direction usually stays far from zero; on the narrow cone, all directions remain on one side of a line. Spread without balance does not force points onto both sides.</li>
-      <li><b>It only sees the origin.</b> Without the lift, the only halfspaces it can talk about pass through the fixed origin. Lifting to (<var>p</var><sub>i</sub>, 1) turns every halfspace through any candidate centre into a linear one, and the 1/<var>q</var><sub>i</sub>-weighted mean <var>c</var> is the centre that makes the directions balance.</li>
-      <li><b>It can fail.</b> On the crowded line, more than half the vectors lie on one line through the origin. No transform exists, the iteration stalls, and the Forster <i>decomposition</i> would keep that line as its subspace instead.</li>
+      <li><b>It can fail.</b> On the crowded line, more than half the vectors lie on one line through the origin. No transform exists and the iteration stalls. A Forster <i>decomposition</i> handles this by keeping that line as a subspace of its own.</li>
     </ul>
   </div>
 
-  <footer>This page uses exact unit normalization in floating point, with no rational normalizers <var>q</var><sub>i</sub>. The iteration is <var>A</var> ← <var>M</var><sup>−1/2</sup><var>A</var> with <var>M</var> = (2/<var>n</var>) Σ <var>u</var><sub>i</sub><var>u</var><sub>i</sub>ᵀ, the simple fixed-point scheme related to Tyler's M-estimator. It is not the strongly polynomial algorithm of Diakonikolas–Tzamos–Kane.</footer>
+  <footer>This page uses exact unit normalization in floating point. The iteration is <var>A</var> ← <var>M</var><sup>−1/2</sup><var>A</var> with <var>M</var> = (2/<var>n</var>) Σ <var>u</var><sub>i</sub><var>u</var><sub>i</sub>ᵀ, the simple fixed-point scheme related to Tyler's M-estimator. It is not the strongly polynomial algorithm of Diakonikolas–Tzamos–Kane.</footer>
 </div>
 
 <script>
@@ -314,7 +313,7 @@ footer { font-size: 0.8rem; color: var(--muted); max-width: 52rem; }
     document.getElementById("r-mean").textContent = "(" + mu[0].toFixed(3) + ", " + mu[1].toFixed(3) + ")   length " + mn.toFixed(3);
     document.getElementById("r-A").textContent = (function () { var s = Math.max(Math.abs(A[0][0]), Math.abs(A[0][1]), Math.abs(A[1][0]), Math.abs(A[1][1])); return A.map(function (r) { return "[" + r.map(function (x) { var v = (x / s).toFixed(3); return (v[0] === "-" ? "" : " ") + v; }).join(" ") + " ]"; }).join("\n"); })();
     var ex = document.getElementById("r-exist");
-    if (cl.count > n / 2) { ex.textContent = cl.count + " of " + n + " vectors lie on one line through the origin (more than half). No Forster transform exists: the iteration keeps squashing that line" + (stalled ? " and was stopped once A became nearly singular" : "") + ". The decomposition would keep that line as V."; ex.className = "note badc"; }
+    if (cl.count > n / 2) { ex.textContent = cl.count + " of " + n + " vectors lie on one line through the origin (more than half). No Forster transform exists: the iteration keeps squashing that line" + (stalled ? " and was stopped once A became nearly singular" : "") + ". A Forster decomposition would keep that line as its own subspace."; ex.className = "note badc"; }
     else if (cl.count * 2 === n) { ex.textContent = "Exactly half the vectors lie on one line through the origin: only an approximate transform exists, and convergence is slow."; ex.className = "note"; }
     else { ex.textContent = "No line through the origin holds more than half the vectors (largest: " + cl.count + " of " + n + "), so a transform exists."; ex.className = "note ok"; }
     var cntL = inside.filter(Boolean).length;
